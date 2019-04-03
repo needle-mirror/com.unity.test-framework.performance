@@ -1,9 +1,19 @@
 # Changelog
 
+## [0.1.29] - 2018-6-12
+
+### Moving back to json in xml due to multiple instabilities
+
+
+## [0.1.28] - 2018-6-01
+
+### Remove json printing from output
+
 
 ## [0.1.27] - 2018-5-31
 
 ### Add meta files to npm ignore
+
 
 ## [0.1.26] - 2018-5-31
 
