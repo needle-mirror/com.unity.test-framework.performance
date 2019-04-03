@@ -26,7 +26,7 @@ namespace Unity.PerformanceTesting
             return new ScopeMeasurement(sampleGroupDefinition);
         }
         
-        public static ProfilerMeasurement ProfilerMarkers(SampleGroupDefinition[] sampleGroupDefinitions)
+        public static ProfilerMeasurement ProfilerMarkers(params SampleGroupDefinition[] sampleGroupDefinitions)
         {
             return new ProfilerMeasurement(sampleGroupDefinitions);
         }
@@ -65,8 +65,8 @@ namespace Unity.PerformanceTesting
 
         public void Dispose()
         {
-            PerformanceTest.Disposables.Remove(this);
             var elapsedTicks = Stopwatch.GetTimestamp() - m_StartTicks;
+            PerformanceTest.Disposables.Remove(this);
             var delta = TimeSpan.FromTicks(elapsedTicks).TotalMilliseconds;
 
             Measure.Custom(m_TimeSampleGroup.Definition,
