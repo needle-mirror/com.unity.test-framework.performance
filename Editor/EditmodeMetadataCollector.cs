@@ -138,7 +138,11 @@ public class EditmodeMetadataCollector : IPrebuildSetup
             AndroidMinimumSdkVersion = UnityEditor.PlayerSettings.Android.minSdkVersion.ToString(),
             AndroidTargetSdkVersion = UnityEditor.PlayerSettings.Android.targetSdkVersion.ToString(),
             Batchmode = UnityEditorInternal.InternalEditorUtility.inBatchMode.ToString(),
+#if UNITY_2019_3_OR_NEWER
+            ScriptingRuntimeVersion = "Latest"
+#else
             ScriptingRuntimeVersion = UnityEditor.PlayerSettings.scriptingRuntimeVersion.ToString()
+#endif
             // @TODO playerSettings.EnabledXrTargets need to set this from Prebuild Setup method
             //EnabledXrTargets = TODO
         };

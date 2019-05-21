@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.9] - 2019-5-21
+
+#### Update scripting runtime setting for 2019.3
+
+## [1.0.8] - 2019-3-8
+
+#### Automation test deploy
+
+## [1.0.7] - 2019-3-8
+
+#### Automation test deploy
+
 ## [1.0.6] - 2019-3-4
 
 ### Update changelog
