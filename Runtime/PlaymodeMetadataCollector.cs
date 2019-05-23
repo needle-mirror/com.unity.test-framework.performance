@@ -1,5 +1,4 @@
-﻿#if UNITY_2018_1_OR_NEWER
-using System;
+﻿using System;
 using System.Collections;
 using System.IO;
 using System.Threading;
@@ -117,11 +116,7 @@ public class PlaymodeMetadataCollector : IPrebuildSetup
             AntiAliasing = UnityEngine.QualitySettings.antiAliasing,
             ColorSpace = UnityEngine.QualitySettings.activeColorSpace.ToString(),
             AnisotropicFiltering = UnityEngine.QualitySettings.anisotropicFiltering.ToString(),
-#if UNITY_2019_1_OR_NEWER
             BlendWeights = UnityEngine.QualitySettings.skinWeights.ToString()
-#else
-            BlendWeights = UnityEngine.QualitySettings.blendWeights.ToString()
-#endif
         };
     }
 
@@ -226,4 +221,3 @@ public class PlaymodeMetadataCollector : IPrebuildSetup
 #endif
     }
 }
-#endif

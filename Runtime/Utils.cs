@@ -172,11 +172,7 @@ namespace Unity.PerformanceTesting.Runtime
                 AntiAliasing = UnityEngine.QualitySettings.antiAliasing,
                 ColorSpace = UnityEngine.QualitySettings.activeColorSpace.ToString(),
                 AnisotropicFiltering = UnityEngine.QualitySettings.anisotropicFiltering.ToString(),
-#if UNITY_2019_1_OR_NEWER
                 BlendWeights = UnityEngine.QualitySettings.skinWeights.ToString()
-#else
-                BlendWeights = UnityEngine.QualitySettings.blendWeights.ToString()
-#endif
             };
         }
 

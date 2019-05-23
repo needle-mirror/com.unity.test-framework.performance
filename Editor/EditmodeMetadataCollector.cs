@@ -1,5 +1,4 @@
-﻿#if UNITY_2018_1_OR_NEWER
-using System;
+﻿using System;
 using System.IO;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
@@ -152,4 +151,3 @@ public class EditmodeMetadataCollector : IPrebuildSetup
         //PlayerSettings.GetBatchingForPlatform(EditorUserBuildSettings.activeBuildTarget, out pbi.staticBatching, out pbi.dynamicBatching);
     }
 }
-#endif

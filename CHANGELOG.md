@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0] - 2019-5-23
+
+### Increase unity version to 2019.2
+
+## [1.1.0] - 2019-5-22
+
+### Update assembly definition formats to avoid testables in package manifest
+
 ## [1.0.9] - 2019-5-21
 
 #### Update scripting runtime setting for 2019.3

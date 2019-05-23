@@ -10,52 +10,13 @@ The Performance Testing Extension is intended to be used with, and complement, t
 ## Installing
 
 To install the Performance Testing Extension package
-1. Open the manifest.json file for your Unity project (located in the YourProject/Packages directory) in a text editor
-2. Add `com.unity.test-framework.performance` to the dependencies as seen below
-3. Add `com.unity.test-framework.performance` to the testables section. If there is not a testables section in your manifest.json file, go ahead and add it.
-4. Save the manifest.json file
-5. Verify the Performance Testing Extension is now installed opening the Unity Package Manager window
-6. Ensure you have created an Assembly Definition file in the same folder where your tests or scripts are that you’ll reference the Performance Testing Extension with. This Assembly Definition file needs to reference `Unity.PerformanceTesting` in order to use the Performance Testing Extension. Example of how to do this:
-    1. Create a new folder for storing tests in ("Tests", for example)
-    2. Create a new assembly definition file in the new folder using the context menu (right click/Create/Assembly definition) and name it "Tests" (or whatever you named the folder from step a. above)
-    3. In inspector for the assembly definition file check "Test Assemblies", and then Apply.
-    4. Open the assembly definition file in a text editor and add Unity.PerformanceTesting. To the references section. Save the file when you’re done doing this.
+1. Open the `manifest.json` file for your Unity project (located in the YourProject/Packages directory) in a text editor
+2. Add `"com.unity.test-framework.performance": "1.2.0-preview",` to the dependencies
+3. Save the manifest.json file
+4. Verify the Performance Testing Extension is now installed opening the Unity Package Manager window
 
-#### Example: manifest.json file
+To access performance testing apis add `Unity.PerformanceTesting` to your assembly definition references section.
 
-``` json
-{
-    "dependencies": {
-        "com.unity.test-framework.performance": "1.0.9-preview",
-        "com.unity.modules.jsonserialize": "1.0.0",
-        "com.unity.modules.unitywebrequest": "1.0.0",
-        "com.unity.modules.vr": "1.0.0"
-      },
-      "testables": [
-        "com.unity.test-framework.performance"
-      ]
-}
-```
-
-
-#### Example: assembly definition file
-
-``` json
-{
-    "name": "Tests.Editor",
-    "references": [
-        "Unity.PerformanceTesting"
-    ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false
-}
-```
 
 ## Test Attributes
 **[Performance]** - Use this with  `Test` and `UnityTest` attributes. It will initialize necessary test setup for performance tests.
@@ -307,7 +268,8 @@ Unity alpha releases include a lot of changes and some of them can lead to break
 
 | Unity version             | Package version |
 | ------------------------- | --------------- |
-| 2019.2.0a1 - latest       | 1.0.9-preview   |
+| 2019.2.0a10 - latest      | 1.2.0-preview   |
+| 2019.2.0a1 - 2019.2.0a10  | 1.0.9-preview   |
 | 2019.1.0a10 - 2019.2.0a1  | 0.1.50-preview  |
 | 2019.1.0a01 - 2019.1.0a10 | 0.1.42-preview  |
 | Older versions            | 0.1.50-preview  |

@@ -1,5 +1,4 @@
-﻿#if UNITY_2019_2_OR_NEWER
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using Unity.PerformanceTesting.Runtime;
@@ -191,4 +190,3 @@ namespace Unity.PerformanceTesting
         }
     }
 }
-#endif
