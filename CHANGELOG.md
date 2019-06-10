@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.1] - 2019-6-7
+
+### Fix bug that would cause player build failures
+
 ## [1.2.0] - 2019-5-23
 
 ### Increase unity version to 2019.2

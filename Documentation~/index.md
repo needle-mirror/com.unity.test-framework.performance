@@ -11,7 +11,7 @@ The Performance Testing Extension is intended to be used with, and complement, t
 
 To install the Performance Testing Extension package
 1. Open the `manifest.json` file for your Unity project (located in the YourProject/Packages directory) in a text editor
-2. Add `"com.unity.test-framework.performance": "1.2.0-preview",` to the dependencies
+2. Add `"com.unity.test-framework.performance": "1.2.1-preview",` to the dependencies
 3. Save the manifest.json file
 4. Verify the Performance Testing Extension is now installed opening the Unity Package Manager window
 
@@ -25,7 +25,7 @@ To access performance testing apis add `Unity.PerformanceTesting` to your assemb
 
 **[UnityTest]** - Yielding test. This is a good choice if you want to sample measurements across multiple frames.
 
-**[Version(string version)]** - Performance tests should be versioned with every change. If not specified it will be assumed to be 1.
+**[Version(string version)]** - Performance tests should be versioned with every change. If not specified it will be assumed to be 1. This is essential when comparing results as we results will vary anytime the test changes.
 
 
 ## SampleGroupDefinition
@@ -98,7 +98,7 @@ Records time per frame by default and provides additional properties/methods to 
 * **MeasurementCount(int n)** - number of frames to capture measurements. If this value is not specified, frames will be captured as many times as possible until approximately 500 ms has elapsed.
 * **DontRecordFrametime()** - disables frametime measurement.
 * **ProfilerMarkers(...)** - sample profile markers per frame. Does not work for deep profiling and `Profiler.BeginSample()`
-* **Scope()** - measures frame times in a given asynchronous scope.
+* **Scope()** - measures frame times in a given coroutine scope.
 
 
 #### Example 1: Simple frame time measurement using default values of at least 7 frames and default WarmupCount (see description above).
@@ -162,7 +162,7 @@ public IEnumerator Test()
 
 ### Measure.Scope()
 
-Measures execution time for the scope as a single time, for both synchronous and asynchronous methods.
+Measures execution time for the scope as a single time, for both synchronous and coroutine methods.
 
 #### Example 1: Measuring a scope; execution time is measured for everything in the using statement
 
@@ -180,7 +180,7 @@ public void Test()
 
 ### Measure.ProfilerMarkers()
 
-Used to record profiler markers. Profiler marker timings will be sampled within the scope of the `using` statement. Note that deep and editor profiling are not available. Profiler markers created using `Profiler.BeginSample()` are not supported, switch to `ProfilerMarker` if possible.
+Used to record profiler markers. Profiler marker timings will be pciked up automatically and sampled within the scope of the `using` statement. Name of the `SampleGroupDefinition` should match profiler marker name. Note that deep and editor profiling are not available. Profiler markers created using `Profiler.BeginSample()` are not supported, switch to `ProfilerMarker` if possible. 
 
 #### Example 1: Measuring profiler markers in a scope
 
@@ -268,7 +268,7 @@ Unity alpha releases include a lot of changes and some of them can lead to break
 
 | Unity version             | Package version |
 | ------------------------- | --------------- |
-| 2019.2.0a10 - latest      | 1.2.0-preview   |
+| 2019.2.0a10 - latest      | 1.2.1-preview   |
 | 2019.2.0a1 - 2019.2.0a10  | 1.0.9-preview   |
 | 2019.1.0a10 - 2019.2.0a1  | 0.1.50-preview  |
 | 2019.1.0a01 - 2019.1.0a10 | 0.1.42-preview  |
