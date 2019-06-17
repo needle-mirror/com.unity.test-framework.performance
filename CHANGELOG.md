@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.3] - 2019-6-14
+
+### Update changelog
+
+## [1.2.2] - 2019-6-13
+
+### Add support for domain reload
+
 ## [1.2.1] - 2019-6-7
 
 ### Fix bug that would cause player build failures

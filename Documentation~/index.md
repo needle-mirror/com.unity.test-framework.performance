@@ -11,7 +11,7 @@ The Performance Testing Extension is intended to be used with, and complement, t
 
 To install the Performance Testing Extension package
 1. Open the `manifest.json` file for your Unity project (located in the YourProject/Packages directory) in a text editor
-2. Add `"com.unity.test-framework.performance": "1.2.1-preview",` to the dependencies
+2. Add `"com.unity.test-framework.performance": "1.2.3-preview",` to the dependencies
 3. Save the manifest.json file
 4. Verify the Performance Testing Extension is now installed opening the Unity Package Manager window
 
@@ -268,7 +268,7 @@ Unity alpha releases include a lot of changes and some of them can lead to break
 
 | Unity version             | Package version |
 | ------------------------- | --------------- |
-| 2019.2.0a10 - latest      | 1.2.1-preview   |
+| 2019.2.0a10 - latest      | 1.2.3-preview   |
 | 2019.2.0a1 - 2019.2.0a10  | 1.0.9-preview   |
 | 2019.1.0a10 - 2019.2.0a1  | 0.1.50-preview  |
 | 2019.1.0a01 - 2019.1.0a10 | 0.1.42-preview  |
