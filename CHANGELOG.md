@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.5] - 2019-6-17
+
+### Test publish for CI
+
+## [1.2.4] - 2019-6-17
+
+### Test publish for CI
+
 ## [1.2.3] - 2019-6-14
 
 ### Update changelog
