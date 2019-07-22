@@ -1,5 +1,4 @@
-﻿#if UNITY_2019_2_OR_NEWER
-using System;
+﻿using System;
 using System.Collections;
 using NUnit.Framework.Interfaces;
 using UnityEngine.TestTools;
@@ -21,4 +20,3 @@ namespace Unity.PerformanceTesting
         }
     }
 }
-#endif

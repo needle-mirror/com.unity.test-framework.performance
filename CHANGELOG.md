@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.2] - 2019-6-13
+
+### Fix domain reload resetting tests
+
+## [1.1.1] - 2019-6-12
+
+### Support for new performance attributes 
+
+## [1.1.0] - 2019-5-22
+
+### Update assembly definition formats to avoid testables in package manifest
+
 ## [1.0.9] - 2019-5-21
 
 #### Update scripting runtime setting for 2019.3

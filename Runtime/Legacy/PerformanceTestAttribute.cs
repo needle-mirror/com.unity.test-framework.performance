@@ -9,6 +9,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.PerformanceTesting
 {
+    [Obsolete("PerformanceTest has been deprecated. Use Test and Performance attributes instead. [PerformanceTest] -> [Test, Performance]", false)]
     [AttributeUsage(AttributeTargets.Method)]
     public class PerformanceTestAttribute : TestAttribute, IWrapTestMethod
     {

@@ -14,6 +14,7 @@ using UnityEngine.TestRunner.NUnitExtensions.Runner;
 
 namespace Unity.PerformanceTesting
 {
+    [Obsolete("PerformanceTest has been deprecated. Use Test and Performance attributes instead. [PerformanceTest] -> [Test, Performance]", false)]
     [AttributeUsage(AttributeTargets.Method)]
     public class PerformanceUnityTestAttribute : 
 #if UNITY_2018_2_OR_NEWER
