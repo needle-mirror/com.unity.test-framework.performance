@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.6] - 2019-8-22
+
+### Categorize performance tests as `performance`
+
+Categorize performance tests as performance
+Remove profiler section on docs as the feature was removed
+ProfilerMarkers can now be called with string params
+Switch measuring frames and methods to stopwatch
+
 ## [1.2.5] - 2019-6-17
 
 ### Test publish for CI

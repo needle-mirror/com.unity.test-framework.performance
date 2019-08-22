@@ -4,6 +4,7 @@ using System.Text;
 using Unity.PerformanceTesting.Runtime;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
+using Unity.PerformanceTesting.Exceptions;
 using UnityEngine;
 using UnityEngine.TestRunner.NUnitExtensions;
 
@@ -112,6 +113,7 @@ namespace Unity.PerformanceTesting
 
         public static SampleGroup GetSampleGroup(SampleGroupDefinition definition)
         {
+            if (Active == null) throw new PerformanceTestException("Trying to record samples but there is no active performance tests.");
             foreach (var sampleGroup in Active.SampleGroups)
             {
                 if (sampleGroup.Definition.Name == definition.Name)
