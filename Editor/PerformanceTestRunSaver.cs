@@ -21,8 +21,6 @@ namespace Unity.PerformanceTesting.Editor
     [Serializable]
     public class PerformanceTestRunSaver : ScriptableObject, ICallbacks
     {
-        private PerformanceTestRun m_Run;
-
         void ICallbacks.RunStarted(ITestAdaptor testsToRun)
         {
         }
@@ -32,11 +30,12 @@ namespace Unity.PerformanceTesting.Editor
             try
             {
                 var resultWriter = new ResultsWriter();
-                string xmlPath = Path.Combine(Application.persistentDataPath, "TestResults.xml");
-                string jsonPath = Path.Combine(Application.persistentDataPath, "PerformanceTestResults.json");
+                var xmlPath = Path.Combine(Application.persistentDataPath, "TestResults.xml");
+                var jsonPath = Path.Combine(Application.persistentDataPath, "PerformanceTestResults.json");
                 resultWriter.WriteResultToFile(result, xmlPath);
                 var xmlParser = new TestResultXmlParser();
                 var run = xmlParser.GetPerformanceTestRunFromXml(xmlPath);
+                if (run == null) return;
                 File.WriteAllText(jsonPath, JsonUtility.ToJson(run, true));
             }
             catch (Exception e)

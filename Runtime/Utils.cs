@@ -9,7 +9,10 @@ namespace Unity.PerformanceTesting.Runtime
 {
     public static class Utils
     {
-        public static Guid ProfileDataMsg = new Guid("f65778bc-f144-4821-8491-ef2552d7f392");
+        public static string ResourcesPath => Path.Combine(Application.dataPath, "Resources");
+        public const string TestRunPath = "Assets/Resources/"+TestRunInfo;
+        public const string TestRunInfo = "PerformanceTestRunInfo.json";
+        public const string PlayerPrefKeyRunJSON = "PT_Run";
 
         public static double DateToInt(DateTime date)
         {
@@ -144,47 +147,6 @@ namespace Unity.PerformanceTesting.Runtime
             }
 
             return path;
-        }
-
-        public static PlayerSystemInfo GetSystemInfo()
-        {
-            return new PlayerSystemInfo
-            {
-                OperatingSystem = SystemInfo.operatingSystem,
-                DeviceModel = SystemInfo.deviceModel,
-                DeviceName = SystemInfo.deviceName,
-                ProcessorType = SystemInfo.processorType,
-                ProcessorCount = SystemInfo.processorCount,
-                GraphicsDeviceName = SystemInfo.graphicsDeviceName,
-                SystemMemorySize = SystemInfo.systemMemorySize,
-#if ENABLE_VR
-                XrModel = UnityEngine.XR.XRDevice.model,
-                XrDevice = UnityEngine.XR.XRSettings.loadedDeviceName
-#endif
-            };
-        }
-
-        public static Unity.PerformanceTesting.QualitySettings GetQualitySettings()
-        {
-            return new Unity.PerformanceTesting.QualitySettings
-            {
-                Vsync = UnityEngine.QualitySettings.vSyncCount,
-                AntiAliasing = UnityEngine.QualitySettings.antiAliasing,
-                ColorSpace = UnityEngine.QualitySettings.activeColorSpace.ToString(),
-                AnisotropicFiltering = UnityEngine.QualitySettings.anisotropicFiltering.ToString(),
-                BlendWeights = UnityEngine.QualitySettings.skinWeights.ToString()
-            };
-        }
-
-        public static ScreenSettings GetScreenSettings()
-        {
-            return new ScreenSettings
-            {
-                ScreenRefreshRate = Screen.currentResolution.refreshRate,
-                ScreenWidth = Screen.currentResolution.width,
-                ScreenHeight = Screen.currentResolution.height,
-                Fullscreen = Screen.fullScreen
-            };
         }
 
         public static string GetArg(string name)

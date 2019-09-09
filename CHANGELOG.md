@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.0] - 2019-8-26
+
+Remove metadata collectors tests
+Switch to errors from exceptions when parsing results
+Increase minimum unity version to 2019.3
+
 ## [1.2.6] - 2019-8-22
 
 ### Categorize performance tests as `performance`
