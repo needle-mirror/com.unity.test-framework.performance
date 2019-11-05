@@ -27,6 +27,8 @@ namespace Unity.PerformanceTesting.Editor
 
         void ICallbacks.RunFinished(ITestResultAdaptor result)
         {
+            PlayerCallbacks.saved = false;
+
             try
             {
                 var resultWriter = new ResultsWriter();

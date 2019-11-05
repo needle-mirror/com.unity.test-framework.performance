@@ -12,7 +12,7 @@ namespace Unity.PerformanceTesting
 {
     public class PlayerCallbacks: ITestRunCallback
     {
-        private static bool saved;
+        internal static bool saved;
         public void RunStarted(ITest testsToRun)
         {
         }
@@ -32,7 +32,7 @@ namespace Unity.PerformanceTesting
             run.PlayerSystemInfo = GetSystemInfo();
             run.QualitySettings = GetQualitySettings();
             run.ScreenSettings = GetScreenSettings();
-            run.TestSuite = Application.isEditor ? "Editmode" : "Playmode";
+            run.TestSuite = Application.isPlaying ? "Playmode" : "Editmode";
             run.BuildSettings.Platform = Application.platform.ToString();
 
             TestContext.Out?.Write("##performancetestruninfo:" + JsonUtility.ToJson(run));

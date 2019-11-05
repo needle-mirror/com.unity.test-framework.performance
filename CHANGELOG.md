@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.1] - 2019-11-5
+
+Fix warning after cleaning resources
+Fix test suite when running in the editor
+
 ## [1.3.0] - 2019-8-26
 
 Remove metadata collectors tests

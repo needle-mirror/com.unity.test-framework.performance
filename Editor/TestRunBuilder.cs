@@ -38,6 +38,7 @@ namespace Unity.PerformanceTesting.Editor
             if (EditorPrefs.GetBool(cleanResources))
             {
                 Directory.Delete("Assets/Resources/", true);
+                File.Delete("Assets/Resources.meta");
             }
 
             AssetDatabase.Refresh();
