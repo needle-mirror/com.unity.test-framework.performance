@@ -12,7 +12,7 @@ namespace Unity.PerformanceTesting
 
         public VersionAttribute(string version)
         {
-            this.Version = version;
+            Version = version;
         }
 
         public void ApplyToTest(Test test)

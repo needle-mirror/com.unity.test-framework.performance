@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.PerformanceTesting.Data;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -10,13 +11,14 @@ namespace Unity.PerformanceTesting
 {
     class TestListTableItem : TreeViewItem
     {
-        public PerformanceTest test;
+        public TestResult test;
         public double deviation;
         public double standardDeviation;
         public double median;
 
-        public TestListTableItem(int id, int depth, string displayName, PerformanceTest test) : base(id, depth,
-            displayName)
+        public TestListTableItem(int id, int depth, string displayName, TestResult test)
+            : base(id, depth,
+                displayName)
         {
             this.test = test;
 
@@ -25,7 +27,7 @@ namespace Unity.PerformanceTesting
             {
                 foreach (var sample in test.SampleGroups)
                 {
-                    if (sample.Definition.Name == "Time")
+                    if (sample.Name == "Time")
                     {
                         deviation = sample.StandardDeviation;
                         median = sample.Median;
@@ -88,9 +90,9 @@ namespace Unity.PerformanceTesting
             SortOption.Median
         };
 
-
         public TestListTable(TreeViewState state, MultiColumnHeader multicolumnHeader,
-            TestReportWindow testReportWindow) : base(state, multicolumnHeader)
+            TestReportWindow testReportWindow)
+            : base(state, multicolumnHeader)
         {
             m_testReportWindow = testReportWindow;
 
@@ -104,6 +106,7 @@ namespace Unity.PerformanceTesting
             customFoldoutYOffset =
                 (kRowHeights - EditorGUIUtility.singleLineHeight) *
                 0.5f; // center foldout in the row since we also center content. See RowGUI
+
             // extraSpaceBeforeIconAndLabel = 0;
             multicolumnHeader.sortingChanged += OnSortingChanged;
 
@@ -122,7 +125,7 @@ namespace Unity.PerformanceTesting
                 int index = 0;
                 foreach (var result in results.Results)
                 {
-                    var item = new TestListTableItem(index, 0, result.TestName, result);
+                    var item = new TestListTableItem(index, 0, result.Name, result);
                     root.AddChild(item);
 
                     // Maintain index to map to main markers
@@ -149,7 +152,6 @@ namespace Unity.PerformanceTesting
 
             return m_Rows;
         }
-
 
         void OnSortingChanged(MultiColumnHeader _multiColumnHeader)
         {
@@ -247,11 +249,11 @@ namespace Unity.PerformanceTesting
 
         protected override void RowGUI(RowGUIArgs args)
         {
-            var item = (TestListTableItem) args.item;
+            var item = (TestListTableItem)args.item;
 
             for (int i = 0; i < args.GetNumVisibleColumns(); ++i)
             {
-                CellGUI(args.GetCellRect(i), item, (MyColumns) args.GetColumn(i), ref args);
+                CellGUI(args.GetCellRect(i), item, (MyColumns)args.GetColumn(i), ref args);
             }
         }
 
@@ -283,7 +285,6 @@ namespace Unity.PerformanceTesting
             }
         }
 
-
         // Misc
         //--------
 
@@ -306,7 +307,7 @@ namespace Unity.PerformanceTesting
                 autoResize = false,
                 allowToggleVisibility = false
             });
-            string[] names = {"Sample Groups", "Standard Deviation", "Deviation", "Median"};
+            string[] names = { "Sample Groups", "Standard Deviation", "Deviation", "Median" };
             foreach (var name in names)
             {
                 var column = new MultiColumnHeaderState.Column
@@ -331,11 +332,11 @@ namespace Unity.PerformanceTesting
             var state = new MultiColumnHeaderState(columns);
             state.visibleColumns = new int[]
             {
-                (int) MyColumns.Name,
-                (int) MyColumns.SampleCount,
-                (int) MyColumns.Deviation,
-                (int) MyColumns.StandardDeviation,
-                (int) MyColumns.Median
+                (int)MyColumns.Name,
+                (int)MyColumns.SampleCount,
+                (int)MyColumns.Deviation,
+                (int)MyColumns.StandardDeviation,
+                (int)MyColumns.Median
             };
             return state;
         }

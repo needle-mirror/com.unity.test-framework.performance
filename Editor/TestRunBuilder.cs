@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using Unity.PerformanceTesting.Data;
 using Unity.PerformanceTesting.Editor;
 using Unity.PerformanceTesting.Runtime;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
-
 
 [assembly: PrebuildSetup(typeof(TestRunBuilder))]
 [assembly: PostBuildCleanup(typeof(TestRunBuilder))]
@@ -18,14 +22,27 @@ namespace Unity.PerformanceTesting.Editor
 
         public void Setup()
         {
-            var run = ReadPerformanceTestRunJson();
-            run.EditorVersion = GetEditorInfo();
-            run.PlayerSettings = GetPlayerSettings(run.PlayerSettings);
-            run.BuildSettings = GetPlayerBuildInfo();
-            run.StartTime = Utils.DateToInt(DateTime.Now);
+            var run = new Run();
+            run.Editor = GetEditorInfo();
+            run.Dependencies = GetPackageDependencies();
+            SetBuildSettings(run);
+
+            run.Date = (int)Utils.ConvertToUnixTimestamp(DateTime.Now);
 
             CreateResourcesFolder();
             CreatePerformanceTestRunJson(run);
+        }
+
+        static List<string> GetPackageDependencies()
+        {
+            var listRequest = UnityEditor.PackageManager.Client.List(true);
+            while (!listRequest.IsCompleted)
+                System.Threading.Thread.Sleep(10);
+            if (listRequest.Status == UnityEditor.PackageManager.StatusCode.Failure)
+                Debug.LogError("Failed to list local packages");
+            var packages = new List<UnityEditor.PackageManager.PackageInfo>(listRequest.Result);
+            var reformated = packages.Select(p => $"{p.name}@{p.version}").ToList();
+            return reformated;
         }
 
         public void Cleanup()
@@ -33,6 +50,7 @@ namespace Unity.PerformanceTesting.Editor
             if (File.Exists(Utils.TestRunPath))
             {
                 File.Delete(Utils.TestRunPath);
+                File.Delete(Utils.TestRunPath + ".meta");
             }
 
             if (EditorPrefs.GetBool(cleanResources))
@@ -44,14 +62,18 @@ namespace Unity.PerformanceTesting.Editor
             AssetDatabase.Refresh();
         }
 
-        private static EditorVersion GetEditorInfo()
+        private static Data.Editor GetEditorInfo()
         {
-            return new EditorVersion
+            var fullVersion = UnityEditorInternal.InternalEditorUtility.GetFullUnityVersion();
+            const string pattern = @"(.+\.+.+\.\w+)|((?<=\().+(?=\)))";
+            var matches = Regex.Matches(fullVersion, pattern);
+
+            return new Data.Editor
             {
-                FullVersion = UnityEditorInternal.InternalEditorUtility.GetFullUnityVersion(),
-                DateSeconds = int.Parse(UnityEditorInternal.InternalEditorUtility.GetUnityVersionDate().ToString()),
                 Branch = GetEditorBranch(),
-                RevisionValue = int.Parse(UnityEditorInternal.InternalEditorUtility.GetUnityRevision().ToString())
+                Version = matches[0].Value,
+                Changeset = matches[1].Value,
+                Date = UnityEditorInternal.InternalEditorUtility.GetUnityVersionDate(),
             };
         }
 
@@ -61,58 +83,25 @@ namespace Unity.PerformanceTesting.Editor
             {
                 if (method.Name.Contains("GetUnityBuildBranch"))
                 {
-                    return (string) method.Invoke(null, null);
+                    return (string)method.Invoke(null, null);
                 }
             }
 
             return "null";
         }
 
-        private static PlayerSettings GetPlayerSettings(PlayerSettings playerSettings)
+        private static void SetBuildSettings(Run run)
         {
-            playerSettings.VrSupported = UnityEditor.PlayerSettings.virtualRealitySupported;
-            playerSettings.MtRendering = UnityEditor.PlayerSettings.MTRendering;
-            playerSettings.GpuSkinning = UnityEditor.PlayerSettings.gpuSkinning;
-            playerSettings.GraphicsJobs = UnityEditor.PlayerSettings.graphicsJobs;
-            playerSettings.GraphicsApi =
-                UnityEditor.PlayerSettings.GetGraphicsAPIs(EditorUserBuildSettings.activeBuildTarget)[0]
-                    .ToString();
-            playerSettings.ScriptingBackend = UnityEditor.PlayerSettings
-                .GetScriptingBackend(EditorUserBuildSettings.selectedBuildTargetGroup)
-                .ToString();
-            playerSettings.StereoRenderingPath = UnityEditor.PlayerSettings.stereoRenderingPath.ToString();
-            playerSettings.RenderThreadingMode = UnityEditor.PlayerSettings.graphicsJobs ? "GraphicsJobs" :
-                UnityEditor.PlayerSettings.MTRendering ? "MultiThreaded" : "SingleThreaded";
-            playerSettings.AndroidMinimumSdkVersion = UnityEditor.PlayerSettings.Android.minSdkVersion.ToString();
-            playerSettings.AndroidTargetSdkVersion = UnityEditor.PlayerSettings.Android.targetSdkVersion.ToString();
-            playerSettings.Batchmode = UnityEditorInternal.InternalEditorUtility.inBatchMode.ToString();
-            return playerSettings;
-        }
+            if (run.Player == null) run.Player = new Player();
 
-        private static BuildSettings GetPlayerBuildInfo()
-        {
-            var buildSettings = new BuildSettings
-            {
-                BuildTarget = EditorUserBuildSettings.activeBuildTarget.ToString(),
-                DevelopmentPlayer = EditorUserBuildSettings.development,
-                AndroidBuildSystem = EditorUserBuildSettings.androidBuildSystem.ToString()
-            };
-            return buildSettings;
+            run.Player.GpuSkinning = PlayerSettings.gpuSkinning;
+            run.Player.ScriptingBackend = PlayerSettings
+                .GetScriptingBackend(EditorUserBuildSettings.selectedBuildTargetGroup).ToString();
+            run.Player.RenderThreadingMode = PlayerSettings.graphicsJobs ? "GraphicsJobs" :
+                PlayerSettings.MTRendering ? "MultiThreaded" : "SingleThreaded";
+            run.Player.AndroidTargetSdkVersion = PlayerSettings.Android.targetSdkVersion.ToString();
+            run.Player.AndroidBuildSystem = EditorUserBuildSettings.androidBuildSystem.ToString();
         }
-
-        private PerformanceTestRun ReadPerformanceTestRunJson()
-        {
-            try
-            {
-                var json = Resources.Load<TextAsset>(Utils.TestRunPath).text;
-                return JsonUtility.FromJson<PerformanceTestRun>(json);
-            }
-            catch
-            {
-                return new PerformanceTestRun {PlayerSettings = new PlayerSettings()};
-            }
-        }
-
 
         private void CreateResourcesFolder()
         {
@@ -126,9 +115,9 @@ namespace Unity.PerformanceTesting.Editor
             AssetDatabase.CreateFolder("Assets", "Resources");
         }
 
-        private void CreatePerformanceTestRunJson(PerformanceTestRun run)
+        private void CreatePerformanceTestRunJson(Run run)
         {
-            var json = JsonUtility.ToJson(run, true);
+            var json = JsonConvert.SerializeObject(run, Formatting.Indented);
             PlayerPrefs.SetString(Utils.PlayerPrefKeyRunJSON, json);
             File.WriteAllText(Utils.TestRunPath, json);
             AssetDatabase.Refresh();

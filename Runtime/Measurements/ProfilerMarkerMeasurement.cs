@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Unity.PerformanceTesting.Runtime;
 using UnityEngine;
 
 namespace Unity.PerformanceTesting.Measurements
@@ -10,11 +9,11 @@ namespace Unity.PerformanceTesting.Measurements
 
         private readonly List<SampleGroup> m_SampleGroups = new List<SampleGroup>();
 
-        public void AddProfilerSample(SampleGroupDefinition[] samplesGroup)
+        public void AddProfilerSample(string[] profilerMarkers)
         {
-            foreach (var sample in samplesGroup)
+            foreach (var marker in profilerMarkers)
             {
-                AddProfilerSample(new SampleGroup(sample));
+                AddProfilerSample(new SampleGroup(marker, SampleUnit.Nanosecond, false));
             }
         }
 
@@ -29,9 +28,7 @@ namespace Unity.PerformanceTesting.Measurements
         {
             foreach (var sampleGroup in m_SampleGroups)
             {
-                Measure.Custom(sampleGroup.Definition,
-                    Utils.ConvertSample(SampleUnit.Nanosecond, sampleGroup.Definition.SampleUnit,
-                        sampleGroup.Recorder.elapsedNanoseconds));
+                Measure.Custom(sampleGroup, sampleGroup.Recorder.elapsedNanoseconds);
             }
         }
 
@@ -40,9 +37,7 @@ namespace Unity.PerformanceTesting.Measurements
             foreach (var sampleGroup in m_SampleGroups)
             {
                 sampleGroup.Recorder.enabled = false;
-                Measure.Custom(sampleGroup.Definition,
-                    Utils.ConvertSample(SampleUnit.Nanosecond, sampleGroup.Definition.SampleUnit,
-                        sampleGroup.Recorder.elapsedNanoseconds));
+                Measure.Custom(sampleGroup, sampleGroup.Recorder.elapsedNanoseconds);
             }
         }
 

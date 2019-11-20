@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Unity.PerformanceTesting.Exceptions;
 using UnityEngine;
 
@@ -10,22 +9,79 @@ namespace Unity.PerformanceTesting.Runtime
     public static class Utils
     {
         public static string ResourcesPath => Path.Combine(Application.dataPath, "Resources");
-        public const string TestRunPath = "Assets/Resources/"+TestRunInfo;
+        public const string TestRunPath = "Assets/Resources/" + TestRunInfo;
         public const string TestRunInfo = "PerformanceTestRunInfo.json";
         public const string PlayerPrefKeyRunJSON = "PT_Run";
 
-        public static double DateToInt(DateTime date)
+        public static DateTime ConvertFromUnixTimestamp(int timestamp)
         {
-            return date.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc))
-                .TotalMilliseconds;
+            DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            return origin.AddSeconds(timestamp);
+        }
+
+        public static int ConvertToUnixTimestamp(DateTime date)
+        {
+            DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            TimeSpan diff = date.ToUniversalTime() - origin;
+            return (int)Math.Floor(diff.TotalSeconds);
+        }
+
+        internal static void ShiftUnit(this Data.SampleGroup sg)
+        {
+            if (sg.Unit == SampleUnit.Undefined) return;
+
+            while (true)
+            {
+                if (sg.Median > 10000)
+                {
+                    if (sg.Unit == SampleUnit.Second || sg.Unit == SampleUnit.Gigabyte)
+                        break;
+
+                    Shrink(sg);
+                    continue;
+                }
+
+                if (sg.Median < 10)
+                {
+                    if (sg.Unit == SampleUnit.Nanosecond || sg.Unit == SampleUnit.Byte)
+                        break;
+
+                    Expand(sg);
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        private static void Shrink(this Data.SampleGroup sg)
+        {
+            for (var i = 0; i < sg.Samples.Count; i++)
+            {
+                sg.Samples[i] = ConvertSample(sg.Unit, sg.Unit + 1, sg.Samples[i]);
+            }
+
+            sg.Unit += 1;
+            sg.UpdateStatistics();
+        }
+
+        private static void Expand(this Data.SampleGroup sg)
+        {
+            for (var i = 0; i < sg.Samples.Count; i++)
+            {
+                sg.Samples[i] = ConvertSample(sg.Unit, sg.Unit - 1, sg.Samples[i]);
+            }
+
+            sg.Unit -= 1;
+            sg.UpdateStatistics();
         }
 
         public static double ConvertSample(SampleUnit from, SampleUnit to, double value)
         {
-            double f = RelativeSampleUnit(@from);
+            double f = RelativeSampleUnit(from);
             double t = RelativeSampleUnit(to);
 
-            return value * (t / f);
+            return value * (f / t);
         }
 
         public static double RelativeSampleUnit(SampleUnit unit)
@@ -33,16 +89,48 @@ namespace Unity.PerformanceTesting.Runtime
             switch (unit)
             {
                 case SampleUnit.Nanosecond:
-                    return 1000000;
+                    return 1;
                 case SampleUnit.Microsecond:
                     return 1000;
                 case SampleUnit.Millisecond:
-                    return 1;
+                    return 1000000;
                 case SampleUnit.Second:
-                    return 0.001;
+                    return 1000000000;
+                case SampleUnit.Byte:
+                    return 1;
+                case SampleUnit.Kilobyte:
+                    return 1000;
+                case SampleUnit.Megabyte:
+                    return 1000000;
+                case SampleUnit.Gigabyte:
+                    return 1000000000;
                 default:
                     throw new PerformanceTestException(
-                        "Wrong SampleUnit type used. Are you trying to convert between time and size units?");
+                        "Wrong SampleUnit type used.");
+            }
+        }
+
+        public static void UpdateStatistics(this Data.SampleGroup sampleGroup)
+        {
+            if (sampleGroup.Samples == null) return;
+            var samples = sampleGroup.Samples;
+            if (samples.Count < 2)
+            {
+                sampleGroup.Min = samples[0];
+                sampleGroup.Max = samples[0];
+                sampleGroup.Median = samples[0];
+                sampleGroup.Average = samples[0];
+                sampleGroup.Sum = samples[0];
+                sampleGroup.StandardDeviation = 0;
+            }
+            else
+            {
+                sampleGroup.Min = Utils.Min(samples);
+                sampleGroup.Max = Utils.Max(samples);
+                sampleGroup.Median = Utils.GetMedianValue(samples);
+                sampleGroup.Average = Utils.Average(samples);
+                sampleGroup.Sum = Utils.Sum(samples);
+                sampleGroup.StandardDeviation = Utils.GetStandardDeviation(samples, sampleGroup.Average);
             }
         }
 
@@ -83,7 +171,7 @@ namespace Unity.PerformanceTesting.Runtime
             }
 
             var rank = percentile * (samplesClone.Count + 1);
-            var integral = (int) rank;
+            var integral = (int)rank;
             var fractional = rank % 1;
             return samplesClone[integral - 1] + fractional * (samplesClone[integral] - samplesClone[integral - 1]);
         }
@@ -161,73 +249,6 @@ namespace Unity.PerformanceTesting.Runtime
             }
 
             return null;
-        }
-
-        public static bool VerifyTestRunMetadata(PerformanceTestRun run)
-        {
-            List<String> errors = new List<string>();
-
-            if (run.TestSuite != "Playmode" && run.TestSuite != "Editmode") errors.Add("TestSuite");
-            if (run.StartTime < 1.0D) errors.Add("StartTime");
-            if (run.EndTime < 1.0D) errors.Add("EndTime");
-
-            if (run.BuildSettings == null) errors.Add("BuildSettings");
-            else
-            {
-                if (run.BuildSettings.BuildTarget.Length == 0) errors.Add("BuildSettings.BuildTarget");
-                if (run.BuildSettings.Platform.Length == 0) errors.Add("BuildSettings.Platform");
-            }
-
-            if (run.EditorVersion == null) errors.Add("EditorVersion");
-            else
-            {
-                if (run.EditorVersion.DateSeconds == 0) errors.Add("EditorVersion.DateSeconds");
-                if (run.EditorVersion.FullVersion.Length == 0) errors.Add("EditorVersion.FullVersion");
-                if (run.EditorVersion.Branch.Length == 0) errors.Add("EditorVersion.Branch");
-                if (run.EditorVersion.RevisionValue == 0) errors.Add("EditorVersion.RevisionValue");
-            }
-
-            if (run.PlayerSettings == null) errors.Add("Performance test has its build settings unassigned.");
-            else
-            {
-                if (run.PlayerSettings.ScriptingBackend.Length == 0) errors.Add("PlayerSettings.ScriptingBackend");
-                if (run.PlayerSettings.GraphicsApi.Length == 0) errors.Add("PlayerSettings.GraphicsAp");
-                if (run.PlayerSettings.Batchmode.Length == 0) errors.Add("PlayerSettings.Batchmode");
-            }
-
-            if (run.PlayerSystemInfo == null) errors.Add("Performance test has its build settings unassigned.");
-            else
-            {
-                if (run.PlayerSystemInfo.ProcessorCount == 0) errors.Add("PlayerSystemInfo.ProcessorCount");
-                if (run.PlayerSystemInfo.OperatingSystem.Length == 0) errors.Add("PlayerSystemInfo.OperatingSystem");
-                if (run.PlayerSystemInfo.ProcessorType.Length == 0) errors.Add("PlayerSystemInfo.ProcessorType");
-                if (run.PlayerSystemInfo.GraphicsDeviceName.Length == 0)errors.Add("PlayerSystemInfo.GraphicsDeviceName");
-                if (run.PlayerSystemInfo.SystemMemorySize == 0) errors.Add("PlayerSystemInfo.SystemMemorySize");
-            }
-
-            if (run.QualitySettings == null) errors.Add("Performance test has its build settings unassigned.");
-            else
-            {
-                if (run.QualitySettings.ColorSpace.Length == 0) errors.Add("QualitySettings.ColorSpace");
-                if (run.QualitySettings.BlendWeights.Length == 0) errors.Add("QualitySettings.BlendWeights");
-                if (run.QualitySettings.AnisotropicFiltering.Length == 0) errors.Add("QualitySettings.AnisotropicFiltering");
-            }
-
-            if (run.ScreenSettings == null) errors.Add("ScreenSettings");
-
-            if (errors.Count > 0)
-            {
-                StringBuilder sb = new StringBuilder();
-                foreach (var error in errors)
-                {
-                    sb.Append(error + ", ");
-                }
-                
-                Debug.LogError("Performance run has missing metadata. Please report this as a bug on #devs-performance. The following fields have not been set: " + sb);
-                return false;
-            }
-
-            return true;
         }
     }
 }

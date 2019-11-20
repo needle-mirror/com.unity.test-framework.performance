@@ -14,47 +14,23 @@ namespace Unity.PerformanceTesting.Measurements
         private const int k_ProbingMultiplier = 4;
         private const int k_MinIterations = 7;
 
-        private SampleGroupDefinition[] m_ProfilerDefinitions;
-        private SampleGroupDefinition m_Definition;
+        private string[] m_ProfilerDefinitions;
+        private string m_SampleGroup;
         private int m_DesiredFrameCount;
         private int m_Executions;
         private int m_Warmup = -1;
         private bool m_RecordFrametime = true;
 
-        public FramesMeasurement ProfilerMarkers(params SampleGroupDefinition[] profilerDefinitions)
-        {
-            m_ProfilerDefinitions = profilerDefinitions;
-            return this;
-        }
-        
         public FramesMeasurement ProfilerMarkers(params string[] profilerMarkerNames)
         {
-            var definitions = new SampleGroupDefinition[profilerMarkerNames.Length];
-            for (int i = 0; i < profilerMarkerNames.Length; i++)
-                definitions[i] = new SampleGroupDefinition(profilerMarkerNames[i]);
-            m_ProfilerDefinitions = definitions;
+            m_ProfilerDefinitions = profilerMarkerNames;
             return this;
         }
 
-        public FramesMeasurement Definition(SampleGroupDefinition definition)
+        public FramesMeasurement SampleGroup(string name)
         {
-            m_Definition = definition;
+            m_SampleGroup = name;
             return this;
-        }
-
-        public FramesMeasurement Definition(string name = "Time", SampleUnit sampleUnit = SampleUnit.Millisecond,
-            AggregationType aggregationType = AggregationType.Median, double threshold = 0.1D,
-            bool increaseIsBetter = false, bool failOnBaseline = true)
-        {
-            return Definition(new SampleGroupDefinition(name, sampleUnit, aggregationType, threshold, increaseIsBetter,
-                failOnBaseline));
-        }
-
-        public FramesMeasurement Definition(string name, SampleUnit sampleUnit, AggregationType aggregationType,
-            double percentile, double threshold = 0.1D, bool increaseIsBetter = false, bool failOnBaseline = true)
-        {
-            return Definition(new SampleGroupDefinition(name, sampleUnit, aggregationType, percentile, threshold,
-                increaseIsBetter, failOnBaseline));
         }
 
         public FramesMeasurement MeasurementCount(int count)
@@ -75,14 +51,9 @@ namespace Unity.PerformanceTesting.Measurements
             return this;
         }
 
-        public ScopedFrameTimeMeasurement Scope()
+        public ScopedFrameTimeMeasurement Scope(string name = "FrameTime")
         {
-            return Scope(new SampleGroupDefinition("FrameTime"));
-        }
-
-        public ScopedFrameTimeMeasurement Scope(SampleGroupDefinition sampleGroupDefinition)
-        {
-            return new ScopedFrameTimeMeasurement(sampleGroupDefinition);
+            return new ScopedFrameTimeMeasurement(name);
         }
 
         public IEnumerator Run()
@@ -93,10 +64,8 @@ namespace Unity.PerformanceTesting.Measurements
                 yield break;
             }
 
-            UpdateSampleGroupDefinition();
             yield return m_Warmup > -1 ? WaitFor(m_Warmup) : GetDesiredIterationCount();
             m_DesiredFrameCount = m_Executions > 0 ? m_Executions : m_DesiredFrameCount;
-
 
             using (Measure.ProfilerMarkers(m_ProfilerDefinitions))
             {
@@ -104,7 +73,7 @@ namespace Unity.PerformanceTesting.Measurements
                 {
                     if (m_RecordFrametime)
                     {
-                        using (Measure.Scope(m_Definition))
+                        using (Measure.Scope(m_SampleGroup))
                         {
                             yield return null;
                         }
@@ -128,7 +97,7 @@ namespace Unity.PerformanceTesting.Measurements
 
                 yield return WaitFor(iterations);
 
-                executionTime = TimeSpan.FromTicks(Stopwatch.GetTimestamp()-sw).TotalMilliseconds;
+                executionTime = TimeSpan.FromTicks(Stopwatch.GetTimestamp() - sw).TotalMilliseconds;
 
                 if (iterations == 1 && executionTime > 40)
                 {
@@ -148,7 +117,7 @@ namespace Unity.PerformanceTesting.Measurements
                 }
             }
 
-            m_DesiredFrameCount = (int) (k_MinTestTimeMs * iterations / executionTime);
+            m_DesiredFrameCount = (int)(k_MinTestTimeMs * iterations / executionTime);
         }
 
         private IEnumerator WaitFor(int iterations)
@@ -159,38 +128,24 @@ namespace Unity.PerformanceTesting.Measurements
             }
         }
 
-
-        private void UpdateSampleGroupDefinition()
+        public struct ScopedFrameTimeMeasurement : IDisposable
         {
-            if (m_Definition.Name == null)
+            private readonly FrameTimeMeasurement m_Test;
+
+            public ScopedFrameTimeMeasurement(string sampleGroup)
             {
-                m_Definition = new SampleGroupDefinition("Time");
+                var go = new GameObject("Recorder");
+                if (Application.isPlaying) Object.DontDestroyOnLoad(go);
+                m_Test = go.AddComponent<FrameTimeMeasurement>();
+                m_Test.SampleGroup = new SampleGroup(sampleGroup);
+                PerformanceTest.Disposables.Add(this);
             }
 
-            if (m_ProfilerDefinitions == null)
+            public void Dispose()
             {
-                m_ProfilerDefinitions = new SampleGroupDefinition[0];
+                PerformanceTest.Disposables.Remove(this);
+                Object.DestroyImmediate(m_Test.gameObject);
             }
-        }
-    }
-
-    public struct ScopedFrameTimeMeasurement : IDisposable
-    {
-        private readonly FrameTimeMeasurement m_Test;
-
-        public ScopedFrameTimeMeasurement(SampleGroupDefinition sampleGroupDefinition)
-        {
-            var go = new GameObject("Recorder");
-            if (Application.isPlaying) Object.DontDestroyOnLoad(go);
-            m_Test = go.AddComponent<FrameTimeMeasurement>();
-            m_Test.SampleGroupDefinition = sampleGroupDefinition;
-            PerformanceTest.Disposables.Add(this);
-        }
-
-        public void Dispose()
-        {
-            PerformanceTest.Disposables.Remove(this);
-            Object.DestroyImmediate(m_Test.gameObject);
         }
     }
 }

@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.1] - 2019-11-20
+
+Fix player callbacks when no tests were executed
+
+## [2.0.0] - 2019-11-19
+
+Refactor data format, reduced nesting
+Slight refactor on measurement API
+Removed unused fields
+Remove deprecated attributes
+Shift sample units when printing results
+Switch to newtosoft json package
+Fix resources cleanup meta files
+Add tests to package testables
+
+
 ## [1.3.1] - 2019-11-5
 
 Fix warning after cleaning resources

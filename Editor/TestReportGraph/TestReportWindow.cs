@@ -6,6 +6,8 @@ using System;
 using UnityEditor.IMGUI.Controls;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
+using Unity.PerformanceTesting.Data;
 using Unity.PerformanceTesting.Runtime;
 
 namespace Unity.PerformanceTesting
@@ -25,7 +27,7 @@ namespace Unity.PerformanceTesting
         public Color m_colorMedianLine = new Color(0.2f, 0.5f, 1.0f, 0.5f);
         public Color m_colorMedianText = new Color(0.4f, 0.7f, 1.0f, 1.0f);
         public Color m_colorWarningText = Color.red;
-        private PerformanceTestRun m_resultsData;
+        private Run m_resultsData;
         private string m_selectedTest;
 
         private List<string> m_sampleGroups = new List<string>();
@@ -35,8 +37,10 @@ namespace Unity.PerformanceTesting
         private bool m_showSamples = true;
         private int[] m_columnWidth = new int[4];
 
-        [SerializeField] TreeViewState m_testListTreeViewState;
-        [SerializeField] MultiColumnHeaderState m_testListMulticolumnHeaderState;
+        [SerializeField]
+        TreeViewState m_testListTreeViewState;
+        [SerializeField]
+        MultiColumnHeaderState m_testListMulticolumnHeaderState;
         TestListTable m_testListTable;
 
         Vector2 m_sampleGroupScroll = new Vector2(0, 0);
@@ -51,12 +55,12 @@ namespace Unity.PerformanceTesting
             m_testListMulticolumnHeaderState = TestListTable.CreateDefaultMultiColumnHeaderState(700);
 
             var multiColumnHeader = new MultiColumnHeader(m_testListMulticolumnHeaderState);
-            multiColumnHeader.SetSorting((int) TestListTable.MyColumns.Name, false);
+            multiColumnHeader.SetSorting((int)TestListTable.MyColumns.Name, false);
             multiColumnHeader.ResizeToFit();
             m_testListTable = new TestListTable(m_testListTreeViewState, multiColumnHeader, this);
         }
 
-        public PerformanceTestRun GetResults()
+        public Run GetResults()
         {
             return m_resultsData;
         }
@@ -74,7 +78,7 @@ namespace Unity.PerformanceTesting
         {
             foreach (var result in m_resultsData.Results)
             {
-                if (result.TestName == name)
+                if (result.Name == name)
                 {
                     SelectTest(result);
                     return;
@@ -82,14 +86,14 @@ namespace Unity.PerformanceTesting
             }
         }
 
-        public void SelectTest(PerformanceTest result)
+        public void SelectTest(TestResult result)
         {
-            m_selectedTest = result.TestName;
+            m_selectedTest = result.Name;
 
             m_sampleGroups.Clear();
             foreach (var sampleGroup in result.SampleGroups)
             {
-                m_sampleGroups.Add(sampleGroup.Definition.Name);
+                m_sampleGroups.Add(sampleGroup.Name);
             }
         }
 
@@ -119,7 +123,7 @@ namespace Unity.PerformanceTesting
             if (!File.Exists(filePath)) return;
 
             string json = File.ReadAllText(filePath);
-            m_resultsData = JsonUtility.FromJson<PerformanceTestRun>(json);
+            m_resultsData = JsonConvert.DeserializeObject<Run>(json);
 
             List<SamplePoint> samplePoints = new List<SamplePoint>();
 
@@ -139,11 +143,11 @@ namespace Unity.PerformanceTesting
 
                     int discard;
                     SampleGroupAdditionalData data = new SampleGroupAdditionalData();
-                    data.min = (float) GetPercentageOffset(samplePoints, 0, out discard);
-                    data.lowerQuartile = (float) GetPercentageOffset(samplePoints, 25, out discard);
-                    data.median = (float) GetPercentageOffset(samplePoints, 50, out discard);
-                    data.upperQuartile = (float) GetPercentageOffset(samplePoints, 75, out discard);
-                    data.max = (float) GetPercentageOffset(samplePoints, 100, out discard);
+                    data.min = (float)GetPercentageOffset(samplePoints, 0, out discard);
+                    data.lowerQuartile = (float)GetPercentageOffset(samplePoints, 25, out discard);
+                    data.median = (float)GetPercentageOffset(samplePoints, 50, out discard);
+                    data.upperQuartile = (float)GetPercentageOffset(samplePoints, 75, out discard);
+                    data.max = (float)GetPercentageOffset(samplePoints, 100, out discard);
 
                     m_sampleGroupAdditionalData.Add(data);
                 }
@@ -179,7 +183,7 @@ namespace Unity.PerformanceTesting
 
         private double GetPercentageOffset(List<SamplePoint> samplePoint, float percent, out int outputFrameIndex)
         {
-            int index = (int) ((samplePoint.Count - 1) * percent / 100);
+            int index = (int)((samplePoint.Count - 1) * percent / 100);
             outputFrameIndex = samplePoint[index].index;
 
             // True median is half of the sum of the middle 2 frames for an even count. However this would be a value never recorded so we avoid that.
@@ -238,7 +242,7 @@ namespace Unity.PerformanceTesting
                 CreateTestListTable();
                 if (m_resultsData == null) return;
                 if (m_resultsData.Results == null) return;
-                if (m_resultsData.Results.Any(result => result.TestName == m_selectedTest))
+                if (m_resultsData.Results.Any(result => result.Name == m_selectedTest))
                     SelectTest(m_selectedTest);
                 else
                     SelectTest(0);
@@ -248,7 +252,7 @@ namespace Unity.PerformanceTesting
                 return;
 
             if (m_resultsData.Results.Count <= 0)
-                GUILayout.Label("No performance test data found.\nNote this is supported only on 2018.3 or newer.");
+                GUILayout.Label("No performance test data found.");
             else
             {
                 m_showTests = BoldFoldout(m_showTests, "Test View");
@@ -287,7 +291,7 @@ namespace Unity.PerformanceTesting
                     int dataIndex = 0;
                     foreach (var result in m_resultsData.Results)
                     {
-                        if (result.TestName != m_selectedTest)
+                        if (result.Name != m_selectedTest)
                         {
                             dataIndex += result.SampleGroups.Count;
                             continue;
@@ -308,10 +312,10 @@ namespace Unity.PerformanceTesting
 
                             EditorGUILayout.BeginVertical(GUI.skin.box,
                                 GUILayout.Width(position.width - GUI.skin.verticalScrollbar.fixedWidth -
-                                                (GUI.skin.box.padding.horizontal + GUI.skin.box.margin.horizontal)),
+                                    (GUI.skin.box.padding.horizontal + GUI.skin.box.margin.horizontal)),
                                 GUILayout.ExpandHeight(false));
-                            EditorGUILayout.LabelField(sampleGroup.Definition.Name, m_boldStyle);
-                            EditorGUILayout.LabelField("Sample Unit: " + sampleGroup.Definition.SampleUnit.ToString());
+                            EditorGUILayout.LabelField(sampleGroup.Name, m_boldStyle);
+                            EditorGUILayout.LabelField("Sample Unit: " + sampleGroup.Unit.ToString());
 
                             EditorGUILayout.BeginHorizontal(GUILayout.Height(100), GUILayout.ExpandHeight(false));
 
@@ -325,6 +329,7 @@ namespace Unity.PerformanceTesting
                                 GUI.contentColor = m_colorMedianText;
                             Draw2Column("Median", median);
                             GUI.contentColor = oldColor;
+
                             //Draw2Column("SD", (float)sampleGroup.StandardDeviation);
                             //Draw2Column("P", (float)sampleGroup.PercentileValue);
                             GUILayout.FlexibleSpace();
@@ -332,7 +337,7 @@ namespace Unity.PerformanceTesting
                             EditorGUILayout.EndVertical();
                             DrawBarGraph(position.width - 200, 100, sampleGroup.Samples, graphMin, max, median);
                             DrawBoxAndWhiskerPlot(50, 100, min, lowerQuartile, median, upperQuartile, max, min, max,
-                                (float) sampleGroup.StandardDeviation, m_colorWhite, m_colorBoxAndWhiskerBackground);
+                                (float)sampleGroup.StandardDeviation, m_colorWhite, m_colorBoxAndWhiskerBackground);
                             EditorGUILayout.EndHorizontal();
 
                             EditorGUILayout.EndVertical();
@@ -367,7 +372,7 @@ namespace Unity.PerformanceTesting
                 float h = 0;
                 for (int i = 0; i < samples.Count; i++)
                 {
-                    float sample = (float) samples[i];
+                    float sample = (float)samples[i];
 
                     w = xAxisInc - spacing;
                     h = ((sample - min) * height) / yRange;
@@ -388,7 +393,7 @@ namespace Unity.PerformanceTesting
                 x = 0;
                 for (int i = 0; i < samples.Count; i++)
                 {
-                    float sample = (float) samples[i];
+                    float sample = (float)samples[i];
 
                     string tooltip = string.Format("{0} (at sample {1} of {2})", sample, i, samples.Count);
 

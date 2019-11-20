@@ -2,15 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using Unity.PerformanceTesting.Runtime;
+using Newtonsoft.Json;
+using Unity.PerformanceTesting.Data;
 using UnityEngine;
 
 namespace Unity.PerformanceTesting.Editor
 {
     public class TestResultXmlParser
     {
-        public PerformanceTestRun GetPerformanceTestRunFromXml(string resultXmlFileName)
+        public Run GetPerformanceTestRunFromXml(string resultXmlFileName)
         {
             ValidateInput(resultXmlFileName);
             var xmlDocument = TryLoadResultXmlFile(resultXmlFileName);
@@ -46,7 +48,7 @@ namespace Unity.PerformanceTesting.Editor
             return null;
         }
 
-        private PerformanceTestRun TryParseXmlToPerformanceTestRun(XContainer xmlDocument)
+        private Run TryParseXmlToPerformanceTestRun(XContainer xmlDocument)
         {
             var output = xmlDocument.Descendants("output").ToArray();
             if (!output.Any())
@@ -54,14 +56,12 @@ namespace Unity.PerformanceTesting.Editor
                 return null;
             }
 
-            var run = new PerformanceTestRun();
+            var run = DeserializeMetadata(output);
             DeserializeTestResults(output, run);
-            DeserializeMetadata(output, run);
-            
             return run;
         }
 
-        private void DeserializeTestResults(IEnumerable<XElement> output, PerformanceTestRun run)
+        private void DeserializeTestResults(IEnumerable<XElement> output, Run run)
         {
             foreach (var element in output)
             {
@@ -77,61 +77,47 @@ namespace Unity.PerformanceTesting.Editor
                     if (result != null)
                     {
                         run.Results.Add(result);
-                    }                    
+                    }
                 }
             }
         }
 
-        private void DeserializeMetadata(IEnumerable<XElement> output, PerformanceTestRun run)
+        private Run DeserializeMetadata(IEnumerable<XElement> output)
         {
             foreach (var element in output)
             {
-                var elements = element.Value.Split('\n');
-                if (!elements.Any(e => e.Length > 0 && e.Substring(0, 2).Equals("##"))) continue;
+                var pattern = @"##performancetestruninfo:(.+)\n";
+                var regex = new Regex(pattern);
+                var matches = regex.Match(element.Value);
+                if (matches.Groups.Count == 0) continue;
+
+                if (matches.Groups[1].Captures.Count > 1)
                 {
-                    var line = elements.First(e => e.Length > 0 && e.Substring(0, 2).Equals("##"));
-
-                    var json = GetJsonFromHashtag("performancetestruninfo", line);
-
-                    // This is the happy case where we have a performancetestruninfo json object
-                    if (json != null)
-                    {
-                        var result = TryDeserializePerformanceTestRunJsonObject(json);
-                        if (result == null) continue;
-                        run.TestSuite = result.TestSuite;
-                        run.EditorVersion = result.EditorVersion;
-                        run.QualitySettings = result.QualitySettings;
-                        run.ScreenSettings = result.ScreenSettings;
-                        run.BuildSettings = result.BuildSettings;
-                        run.PlayerSettings = result.PlayerSettings;
-                        run.PlayerSystemInfo = result.PlayerSystemInfo;
-                        run.StartTime = result.StartTime;
-                        run.EndTime = Utils.DateToInt(DateTime.Now);
-                    }
-                    // Unhappy case where we couldn't find a performancetestruninfo object
-                    // This could be because we have missing metadata for the test run
-                    // In this case, we try to look for a performancetestresult json object
-                    // We should have at least startime metadata  that we can use to correctly
-                    // display the test results on the x-axis of the chart
-                    else
-                    {
-                        json = GetJsonFromHashtag("performancetestresult", line);
-                        if (json != null)
-                        {
-                            var result = TryDeserializePerformanceTestRunJsonObject(json);
-                            run.StartTime = result.StartTime;
-                            run.EndTime = Utils.DateToInt(DateTime.Now);
-                        }
-                    }
+                    Debug.LogError("Performance test run had multiple hardware and player settings, there should only be one.");
+                    return null;
                 }
+
+                var json = matches.Groups[1].Value;
+                if (string.IsNullOrEmpty(json))
+                {
+                    Debug.LogError("Performance test run has incomplete hardware and player settings.");
+                    return null;
+                }
+
+                ;
+
+                var result = TryDeserializePerformanceTestRunJsonObject(json);
+                return result;
             }
+
+            return null;
         }
 
-        private PerformanceTest TryDeserializePerformanceTestResultJsonObject(string json)
+        private TestResult TryDeserializePerformanceTestResultJsonObject(string json)
         {
             try
             {
-                return JsonUtility.FromJson<PerformanceTest>(json);
+                return JsonConvert.DeserializeObject<TestResult>(json);
             }
             catch (Exception e)
             {
@@ -141,12 +127,12 @@ namespace Unity.PerformanceTesting.Editor
 
             return null;
         }
-        
-        private PerformanceTestRun TryDeserializePerformanceTestRunJsonObject(string json)
+
+        private Run TryDeserializePerformanceTestRunJsonObject(string json)
         {
             try
             {
-                return JsonUtility.FromJson<PerformanceTestRun>(json);
+                return JsonConvert.DeserializeObject<Run>(json);
             }
             catch (Exception e)
             {
@@ -178,6 +164,7 @@ namespace Unity.PerformanceTesting.Editor
 
                 stringIndex++;
             }
+
             var jsonEnd = stringIndex;
             return line.Substring(jsonStart, jsonEnd - jsonStart);
         }

@@ -8,10 +8,8 @@ namespace Unity.PerformanceTesting
 {
     public class PerformanceAttribute : CategoryAttribute, IOuterUnityTestAction
     {
-        public PerformanceAttribute() : base("Performance")
-        {
-        }
-
+        public PerformanceAttribute()
+            : base("Performance") { }
 
         public IEnumerator BeforeTest(ITest test)
         {
@@ -22,6 +20,7 @@ namespace Unity.PerformanceTesting
         public IEnumerator AfterTest(ITest test)
         {
             PerformanceTest.EndTest(test);
+            var t = PerformanceTest.Active;
             yield return null;
         }
     }

@@ -11,7 +11,7 @@ The Performance Testing Extension is intended to be used with, and complement, t
 
 To install the Performance Testing Extension package
 1. Open the `manifest.json` file for your Unity project (located in the YourProject/Packages directory) in a text editor
-2. Add `"com.unity.test-framework.performance": "1.3.1-preview",` to the dependencies
+2. Add `"com.unity.test-framework.performance": "2.0.1-preview",` to the dependencies
 3. Save the manifest.json file
 4. Verify the Performance Testing Extension is now installed opening the Unity Package Manager window
 
@@ -28,19 +28,15 @@ To access performance testing apis add `Unity.PerformanceTesting` to your assemb
 **[Version(string version)]** - Performance tests should be versioned with every change. If not specified it will be assumed to be 1. This is essential when comparing results as we results will vary anytime the test changes.
 
 
-## SampleGroupDefinition
+## SampleGroup
 
-**struct SampleGroupDefinition** - used to define how a measurement is used in reporting and in regression detection.
+**class SampleGroup** - represents a group of samples with the same purpose that share a name, sample unit and whether increase is better. 
 
 Optional parameters
-- **name** : Name of the measurement. If unspecified a default name of "Time" will be used.
-- **sampleUnit** : Unit of the measurement to report samples in. Possible values are:
+- **Name** : Name of the measurement. If unspecified a default name of "Time" will be used.
+- **Unit** : Unit of the measurement to report samples in. Possible values are:
 Nanosecond, Microsecond, Millisecond, Second, Byte, Kilobyte, Megabyte, Gigabyte
-- **aggregationType** : Preferred aggregation (default is median). Possible values are:
-Median, Average, Min, Max, Percentile
-- **percentile** : If aggregationType is Percentile, the percentile value used for the aggregation. e.g. 0.95.
-- **increaseIsBetter** : Determines whether or not an increase in the measurement value should be considered a progression (performance improved) or a performance regression. Default is false. **NOTE:** This value is not used directly in the Performance Testing Extension, but recorded for later use in a reporting tool (such as the [Unity Performance Benchmark Reporter](https://github.com/Unity-Technologies/PerformanceBenchmarkReporter/wiki)) to determine whether or not a performance regression has occurred when used with a baseline result set.
-- **threshold** : The threshold, as a percentage of the aggregated sample group value, to use for regression detection. Default value is 0.15f. **NOTE:** This value is not used directly in the Performance Testing Extension, but recorded for later use in a reporting tool (such as the [Unity Performance Benchmark Reporter](https://github.com/Unity-Technologies/PerformanceBenchmarkReporter/wiki)) to determine whether or not a performance regression has occurred when used with a baseline result set.
+- **IncreaseIsBetter** : Determines whether or not an increase in the measurement value should be considered a progression (performance improved) or a performance regression. Default is false. 
 
 
 ## Taking measurements
@@ -50,10 +46,9 @@ The Performance Testing Extension provides several API methods you can use to ta
 They are:
 * Measure.Method
 * Measure.Frames
-* Measure.Scope(SampleGroupdDefinition sampleGroupDefinition)
-* Measure.FrameTimes(SampleGroupdDefinition sampleGroupDefinition)
-* Measure.ProfilerMarkers(SampleGroupDefinition[] sampleGroupDefinitions)
-* Measure.Custom(SampleGroupDefinition sampleGroupDefinition, double value)
+* Measure.Scope
+* Measure.ProfilerMarkers
+* Measure.Custom
 
 The sections below detail the specifics of each measurement method with examples.
 
@@ -61,9 +56,10 @@ The sections below detail the specifics of each measurement method with examples
 ### Measure.Method()
 
 This will execute the provided method, sampling performance using the following additional properties/methods to control how the measurements are taken:
-* **WarmupCount(int n)** - number of times to to execute before measurements are collected. If unspecified, a default warmup is executed. This default warmup will wait for 7 ms. However, if less than 3 method executions have finished in that time, the warmup will wait until 3 method executions have completed.
-* **MeasurementCount(int n)** - number of measurements to capture. Default is 7 if not specified.
-* **IterationsPerMeasurement(int n)** - number of method executions per measurement to use. If this value is not specified, the method will be executed as many times as possible until approximately 1 ms has elapsed.
+* **WarmupCount(int n)** - number of times to to execute before measurements are collected. If unspecified, a default warmup is executed. This default warmup will wait for 100 ms. However, if less than 3 method executions have finished in that time, the warmup will wait until 3 method executions have completed.
+* **MeasurementCount(int n)** - number of measurements to capture. If not specified default value is 9.
+* **IterationsPerMeasurement(int n)** - number of method executions per measurement to use. If this value is not specified, the method will be executed as many times as possible until approximately 100 ms has elapsed.
+* **SampleGroup(string name)** - by default the measurement name will be "Time", this allows you to override it
 * **GC()** - if specified, will measure the total number of Garbage Collection allocation calls.
 
 #### Example 1: Simple method measurement using default values
@@ -98,6 +94,7 @@ Records time per frame by default and provides additional properties/methods to 
 * **MeasurementCount(int n)** - number of frames to capture measurements. If this value is not specified, frames will be captured as many times as possible until approximately 500 ms has elapsed.
 * **DontRecordFrametime()** - disables frametime measurement.
 * **ProfilerMarkers(...)** - sample profile markers per frame. Does not work for deep profiling and `Profiler.BeginSample()`
+* **SampleGroup(string name)** - by default the measurement name will be "Time", this allows you to override it
 * **Scope()** - measures frame times in a given coroutine scope.
 
 
@@ -160,9 +157,9 @@ public IEnumerator Test()
 }
 ```
 
-### Measure.Scope()
+### Measure.Scope(string name = "Time")
 
-Measures execution time for the scope as a single time, for both synchronous and coroutine methods.
+Measures execution time for the scope as a single time, for both synchronous and coroutine methods. Passing name argument will override the name of created SampleGroup.
 
 #### Example 1: Measuring a scope; execution time is measured for everything in the using statement
 
@@ -180,7 +177,7 @@ public void Test()
 
 ### Measure.ProfilerMarkers()
 
-Used to record profiler markers. Profiler marker timings will be pciked up automatically and sampled within the scope of the `using` statement. Name of the `SampleGroupDefinition` should match profiler marker name. Note that deep and editor profiling are not available. Profiler markers created using `Profiler.BeginSample()` are not supported, switch to `ProfilerMarker` if possible. 
+Used to record profiler markers. Profiler marker timings will be recorded automatically and sampled within the scope of the `using` statement. Names should match profiler marker labels. Note that deep and editor profiling are not available. Profiler markers created using `Profiler.BeginSample()` are not supported, switch to `ProfilerMarker` if possible. 
 
 #### Example 1: Measuring profiler markers in a scope
 
@@ -188,15 +185,15 @@ Used to record profiler markers. Profiler marker timings will be pciked up autom
 [Test, Performance]
 public void Test()
 {
-    SampleGroupDefinition[] m_definitions =
+    string[] markers =
     {
-        new SampleGroupDefinition("Instantiate"),
-        new SampleGroupDefinition("Instantiate.Copy"),
-        new SampleGroupDefinition("Instantiate.Produce"),
-        new SampleGroupDefinition("Instantiate.Awake")
+        "Instantiate",
+        "Instantiate.Copy",
+        "Instantiate.Produce",
+        "Instantiate.Awake"
     };
 
-    using(Measure.ProfilerMarkers(m_definitions))
+    using(Measure.ProfilerMarkers(markers))
     {
         ...
     }
@@ -206,7 +203,7 @@ public void Test()
 
 ### Measure.Custom()
 
-When you want to record samples outside of frame time, method time, or profiler markers, use a custom measurement. It can be any double value. A sample group definition is required.
+When you want to record samples outside of frame time, method time, or profiler markers, use a custom measurement. It can be any value.
 
 #### Example 1: Use a custom measurement to capture total allocated memory
 
@@ -214,23 +211,25 @@ When you want to record samples outside of frame time, method time, or profiler 
 [Test, Performance]
 public void Test()
 {
-    var definition = new SampleGroupDefinition("TotalAllocatedMemory", SampleUnit.Megabyte);
-    Measure.Custom(definition, Profiler.GetTotalAllocatedMemoryLong() / 1048576f);
+	SampleGroup samplegroup = new SampleGroup("TotalAllocatedMemory", SampleUnit.Megabyte, false);
+    var allocatedMemory = Profiler.GetTotalAllocatedMemoryLong() / 1048576f
+    Measure.Custom(samplegroup, allocatedMemory);
+
 }
 ```
 
 ## Output
 
-When a test is selected in the Unity Test Runner window within the Unity Editor, each performance test will have a performance test summary. This summary includes every sample group’s aggregated samples such as median, min, max, average, standard deviation, sample count, count of zero samples and sum of all samples.
+When a test is selected in the Unity Test Runner window within the Unity Editor, each performance test will have a performance test summary. This summary includes every sample group’s aggregated samples such as median, min, max, average, standard deviation, sample count and sum of all samples.
 
 #### Example 1: Performance Test Summary from Unity Test Runner window
 
-`Time Millisecond Median:53.59 Min:53.36 Max:62.10 Avg:54.07 Std:1.90 Zeroes:0 SampleCount: 19 Sum: 1027.34`
+`Time Microsecond Median:2018.60 Min:1903.00 Max:2819.80 Avg:2186.35 Std:368.42 SampleCount: 4 Sum: 8745.40`
 
 
 ## Viewing performance test report
 
-The Performance Test Report window shows a detailed breakdown of individual test runs. This can be used to assess the stability of each test. It provides a visualisation of each individual sample recorded within a sample group along with summary statistics for the selected test. You can open the window by going to *Window > Analysis > Performance Test Report*.
+The Performance Test Report window shows a detailed breakdown of individual test runs. This can be used to assess the stability of each test. It provides a visualization of each individual sample recorded within a sample group along with summary statistics for the selected test. You can open the window by going to *Window > Analysis > Performance Test Report*.
 
 The Performance Test Report is split into two views: the *test view* and the *sample group view*.
 
@@ -245,8 +244,6 @@ The Performance Test Report is split into two views: the *test view* and the *sa
 *   Samples displayed in a bar chart, ordered by time, with a blue line indicating the median.
 *   Box plot showing upper (75%) and lower (25%) quartiles, min, max and median of the samples for a given sample group.
 
-*Note: Performance Test Report is supported in Unity version 2018.3 or newer.*
-
 ![Performance test report](images/graphtool.png)
 
 ## Unity alpha version compatibility
@@ -255,7 +252,7 @@ Unity alpha releases include a lot of changes and some of them can lead to break
 
 | Unity version             | Package version |
 | ------------------------- | --------------- |
-| 2019.2.0a10 - latest      | 1.2.3-preview+   |
+| 2019.2.0a10 - latest      | 1.2.3-preview+  |
 | 2019.2.0a1 - 2019.2.0a10  | 1.0.9-preview   |
 | 2019.1.0a10 - 2019.2.0a1  | 0.1.50-preview  |
 | 2019.1.0a01 - 2019.1.0a10 | 0.1.42-preview  |
@@ -349,9 +346,7 @@ public static string GetScenePath(string name)
         var obj = new SimpleObject();
         obj.Init();
 
-        Measure.Method(() => JsonUtility.ToJson(obj))
-            .Definition(sampleUnit: SampleUnit.Microsecond)
-            .Run();
+        Measure.Method(() => JsonUtility.ToJson(obj)).Run();
     }
 
     [Serializable]
@@ -388,18 +383,18 @@ public static string GetScenePath(string name)
 #### Example 2: Measure execution time to create 5000 simple cubes
 
 ``` csharp
-    SampleGroupDefinition[] m_definitions =
+    string[] markers =
     {
-        new SampleGroupDefinition("Instantiate"),
-        new SampleGroupDefinition("Instantiate.Copy"),
-        new SampleGroupDefinition("Instantiate.Produce"),
-        new SampleGroupDefinition("Instantiate.Awake")
+        "Instantiate",
+        "Instantiate.Copy",
+        "Instantiate.Produce",
+        "Instantiate.Awake"
     };
 
     [Test, Performance]
     public void Instantiate_CreateCubes()
     {
-        using (Measure.ProfilerMarkers(m_definitions))
+        using (Measure.ProfilerMarkers(markers))
         {
             using(Measure.Scope())
             {
@@ -419,7 +414,7 @@ public static string GetScenePath(string name)
     [UnityTest, Performance]
     public IEnumerator Rendering_SampleScene()
     {
-        using(Measure.Scope(new SampleGroupDefinition("Setup.LoadScene")))
+        using(Measure.Scope("Setup.LoadScene"))
         {
             SceneManager.LoadScene("SampleScene");
         }
@@ -435,8 +430,8 @@ public static string GetScenePath(string name)
     [Test, Performance, Version("1")]
     public void Measure_Empty()
     {
-        var allocated = new SampleGroupDefinition("TotalAllocatedMemory", SampleUnit.Megabyte);
-        var reserved = new SampleGroupDefinition("TotalReservedMemory", SampleUnit.Megabyte);
+        var allocated = new SampleGroup("TotalAllocatedMemory", SampleUnit.Megabyte);
+        var reserved = new SampleGroup("TotalReservedMemory", SampleUnit.Megabyte);
         Measure.Custom(allocated, Profiler.GetTotalAllocatedMemoryLong() / 1048576f);
         Measure.Custom(reserved, Profiler.GetTotalReservedMemoryLong() / 1048576f);
     }
