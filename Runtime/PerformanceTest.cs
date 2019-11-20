@@ -91,7 +91,7 @@ namespace Unity.PerformanceTesting
             OnTestEnded?.Invoke();
             Active.LogOutput();
 
-            TestContext.Out.WriteLine("##performancetestresult:" + JsonConvert.SerializeObject(Active));
+            TestContext.Out.WriteLine("##performancetestresult2:" + JsonConvert.SerializeObject(Active));
             Active = null;
             GC.Collect();
         }

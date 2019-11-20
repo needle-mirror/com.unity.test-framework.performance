@@ -67,7 +67,7 @@ namespace Unity.PerformanceTesting.Editor
             {
                 foreach (var line in element.Value.Split('\n'))
                 {
-                    var json = GetJsonFromHashtag("performancetestresult", line);
+                    var json = GetJsonFromHashtag("performancetestresult2", line);
                     if (json == null)
                     {
                         continue;
@@ -86,7 +86,7 @@ namespace Unity.PerformanceTesting.Editor
         {
             foreach (var element in output)
             {
-                var pattern = @"##performancetestruninfo:(.+)\n";
+                var pattern = @"##performancetestruninfo2:(.+)\n";
                 var regex = new Regex(pattern);
                 var matches = regex.Match(element.Value);
                 if (matches.Groups.Count == 0) continue;

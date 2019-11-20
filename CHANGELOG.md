@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.2] - 2019-11-20
+
+Increase test serialization version
+
 ## [2.0.1] - 2019-11-20
 
 Fix player callbacks when no tests were executed

@@ -33,7 +33,7 @@ namespace Unity.PerformanceTesting
             run.TestSuite = Application.isPlaying ? "Playmode" : "Editmode";
 
             var json = JsonConvert.SerializeObject(run);
-            TestContext.Out?.WriteLine("##performancetestruninfo:" + json);
+            TestContext.Out?.WriteLine("##performancetestruninfo2:" + json);
             saved = true;
         }
 
