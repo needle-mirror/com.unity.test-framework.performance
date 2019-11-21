@@ -28,9 +28,12 @@ namespace Unity.PerformanceTesting.Data
         public bool Batchmode;
         public string RenderThreadingMode;
         public bool GpuSkinning;
-        // strings because values are editor only enums
+        // strings because their enums are editor only
         public string ScriptingBackend;
         public string AndroidTargetSdkVersion;
         public string AndroidBuildSystem;
+        public string BuildTarget;
+        public string StereoRenderingPath;
+
     }
 }

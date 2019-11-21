@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.3] - 2019-11-20
+
+Add new fields to data format BuildTarget, StereoRenderingPath
+
 ## [2.0.2] - 2019-11-20
 
 Increase test serialization version

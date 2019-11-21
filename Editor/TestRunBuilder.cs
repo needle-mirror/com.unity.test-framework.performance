@@ -101,6 +101,8 @@ namespace Unity.PerformanceTesting.Editor
                 PlayerSettings.MTRendering ? "MultiThreaded" : "SingleThreaded";
             run.Player.AndroidTargetSdkVersion = PlayerSettings.Android.targetSdkVersion.ToString();
             run.Player.AndroidBuildSystem = EditorUserBuildSettings.androidBuildSystem.ToString();
+            run.Player.BuildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
+            run.Player.StereoRenderingPath = PlayerSettings.stereoRenderingPath.ToString();
         }
 
         private void CreateResourcesFolder()
