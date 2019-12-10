@@ -70,7 +70,6 @@ namespace Unity.PerformanceTesting.Editor
 
         private static PlayerSettings GetPlayerSettings(PlayerSettings playerSettings)
         {
-            playerSettings.VrSupported = UnityEditor.PlayerSettings.virtualRealitySupported;
             playerSettings.MtRendering = UnityEditor.PlayerSettings.MTRendering;
             playerSettings.GpuSkinning = UnityEditor.PlayerSettings.gpuSkinning;
             playerSettings.GraphicsJobs = UnityEditor.PlayerSettings.graphicsJobs;

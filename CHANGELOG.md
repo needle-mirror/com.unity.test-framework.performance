@@ -1,5 +1,10 @@
 # Changelog
 
+
+## [1.3.2] - 2019-11-27
+
+Method measurements will now measure the time for a single iteration
+
 ## [1.3.1] - 2019-11-5
 
 Fix warning after cleaning resources

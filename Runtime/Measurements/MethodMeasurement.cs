@@ -142,7 +142,7 @@ namespace Unity.PerformanceTesting.Measurements
             {
                 var executionTime = iterations == 1 ? ExecuteSingleIteration() : ExecuteForIterations(iterations);
                 Measure.Custom(m_Definition,
-                    Utils.ConvertSample(SampleUnit.Millisecond, m_Definition.SampleUnit, executionTime));
+                    Utils.ConvertSample(SampleUnit.Millisecond, m_Definition.SampleUnit, executionTime / iterations));
             }
 
             DisableAndMeasureMarkers();
