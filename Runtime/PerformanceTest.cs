@@ -97,6 +97,7 @@ namespace Unity.PerformanceTesting
             Active.LogOutput();
 
             TestContext.Out.WriteLine("##performancetestresult:" + JsonUtility.ToJson(Active));
+            PlayerCallbacks.LogMetadata();
             Active = null;
             GC.Collect();
         }

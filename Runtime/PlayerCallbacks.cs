@@ -1,31 +1,15 @@
 using System;
 using UnityEngine;
-using UnityEngine.TestRunner;
-using Unity.PerformanceTesting;
 using Unity.PerformanceTesting.Runtime;
 using NUnit.Framework;
-using NUnit.Framework.Interfaces;
-
-[assembly: TestRunCallback(typeof(PlayerCallbacks))]
 
 namespace Unity.PerformanceTesting
 {
-    public class PlayerCallbacks: ITestRunCallback
+    public class PlayerCallbacks
     {
         internal static bool saved;
-        public void RunStarted(ITest testsToRun)
-        {
-        }
 
-        public void RunFinished(ITestResult testResults)
-        {
-        }
-
-        public void TestStarted(ITest test)
-        {
-        }
-
-        public void TestFinished(ITestResult result)
+        internal static void LogMetadata()
         {
             if(saved) return;
             var run = ReadPerformanceTestRun();
@@ -36,10 +20,11 @@ namespace Unity.PerformanceTesting
             run.BuildSettings.Platform = Application.platform.ToString();
 
             TestContext.Out?.Write("##performancetestruninfo:" + JsonUtility.ToJson(run));
-            saved = true;
+            saved = true;            
         }
         
-        private PerformanceTestRun ReadPerformanceTestRun()
+        
+        private static PerformanceTestRun ReadPerformanceTestRun()
         {
             try
             {            
@@ -73,7 +58,7 @@ namespace Unity.PerformanceTesting
             };
         }
 
-        private QualitySettings GetQualitySettings()
+        private static QualitySettings GetQualitySettings()
         {
             return new QualitySettings()
             {
@@ -85,7 +70,7 @@ namespace Unity.PerformanceTesting
             };
         }
 
-        private ScreenSettings GetScreenSettings()
+        private static ScreenSettings GetScreenSettings()
         {
             return new ScreenSettings
             {

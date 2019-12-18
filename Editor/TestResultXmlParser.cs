@@ -89,38 +89,26 @@ namespace Unity.PerformanceTesting.Editor
                 var elements = element.Value.Split('\n');
                 if (!elements.Any(e => e.Length > 0 && e.Substring(0, 2).Equals("##"))) continue;
                 {
-                    var line = elements.First(e => e.Length > 0 && e.Substring(0, 2).Equals("##"));
+                    var lines = elements.Where(e => e.Length > 0 && e.Substring(0, 2).Equals("##"));
 
-                    var json = GetJsonFromHashtag("performancetestruninfo", line);
+                    foreach (var line in lines)
+                    {
+                        var json = GetJsonFromHashtag("performancetestruninfo", line);
 
-                    // This is the happy case where we have a performancetestruninfo json object
-                    if (json != null)
-                    {
-                        var result = TryDeserializePerformanceTestRunJsonObject(json);
-                        if (result == null) continue;
-                        run.TestSuite = result.TestSuite;
-                        run.EditorVersion = result.EditorVersion;
-                        run.QualitySettings = result.QualitySettings;
-                        run.ScreenSettings = result.ScreenSettings;
-                        run.BuildSettings = result.BuildSettings;
-                        run.PlayerSettings = result.PlayerSettings;
-                        run.PlayerSystemInfo = result.PlayerSystemInfo;
-                        run.StartTime = result.StartTime;
-                        run.EndTime = Utils.DateToInt(DateTime.Now);
-                    }
-                    // Unhappy case where we couldn't find a performancetestruninfo object
-                    // This could be because we have missing metadata for the test run
-                    // In this case, we try to look for a performancetestresult json object
-                    // We should have at least startime metadata  that we can use to correctly
-                    // display the test results on the x-axis of the chart
-                    else
-                    {
-                        json = GetJsonFromHashtag("performancetestresult", line);
                         if (json != null)
                         {
                             var result = TryDeserializePerformanceTestRunJsonObject(json);
+                            if (result == null) continue;
+                            run.TestSuite = result.TestSuite;
+                            run.EditorVersion = result.EditorVersion;
+                            run.QualitySettings = result.QualitySettings;
+                            run.ScreenSettings = result.ScreenSettings;
+                            run.BuildSettings = result.BuildSettings;
+                            run.PlayerSettings = result.PlayerSettings;
+                            run.PlayerSystemInfo = result.PlayerSystemInfo;
                             run.StartTime = result.StartTime;
                             run.EndTime = Utils.DateToInt(DateTime.Now);
+                            break;
                         }
                     }
                 }
