@@ -104,8 +104,6 @@ namespace Unity.PerformanceTesting.Editor
                     return null;
                 }
 
-                ;
-
                 var result = TryDeserializePerformanceTestRunJsonObject(json);
                 return result;
             }

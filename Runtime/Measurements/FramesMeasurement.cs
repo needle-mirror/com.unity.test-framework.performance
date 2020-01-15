@@ -15,7 +15,7 @@ namespace Unity.PerformanceTesting.Measurements
         private const int k_MinIterations = 7;
 
         private string[] m_ProfilerDefinitions;
-        private string m_SampleGroup;
+        private string m_SampleGroup = "Time";
         private int m_DesiredFrameCount;
         private int m_Executions;
         private int m_Warmup = -1;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.PerformanceTesting.Exceptions;
 
 namespace Unity.PerformanceTesting.Data
 {
@@ -21,6 +22,11 @@ namespace Unity.PerformanceTesting.Data
             Name = name;
             Unit = unit;
             IncreaseIsBetter = increaseIsBetter;
+
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new PerformanceTestException("Sample group name is empty. Please assign a valid name.");
+            }
         }
     }
 }

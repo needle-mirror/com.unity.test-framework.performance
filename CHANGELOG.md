@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.0.6] - 2020-01-13
+
+Fix development player field
+
+## [2.0.5] - 2020-01-13
+
+Disallow multiple performance attributes
+Disallow empty samplegroup name
+Assign samplegroup name to frames measurements
+
+## [2.0.4] - 2019-12-5
+
+Update json packae to support AOT platforms
+
 ## [2.0.3] - 2019-11-20
 
 Add new fields to data format BuildTarget, StereoRenderingPath

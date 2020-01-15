@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.PerformanceTesting
 {
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class PerformanceAttribute : CategoryAttribute, IOuterUnityTestAction
     {
         public PerformanceAttribute()

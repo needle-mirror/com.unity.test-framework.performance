@@ -8,8 +8,6 @@ namespace Unity.PerformanceTesting.Data
 {
     public class Player
     {
-        [JsonConverter(typeof(StringEnumConverter))]
-        public RuntimePlatform Platform;
         public bool Development;
         public int ScreenWidth;
         public int ScreenHeight;
@@ -17,17 +15,18 @@ namespace Unity.PerformanceTesting.Data
         public bool Fullscreen;
         public int Vsync;
         public int AntiAliasing;
-        [JsonConverter(typeof(StringEnumConverter))]
-        public ColorSpace ColorSpace;
-        [JsonConverter(typeof(StringEnumConverter))]
-        public AnisotropicFiltering AnisotropicFiltering;
-        [JsonConverter(typeof(StringEnumConverter))]
-        public SkinWeights BlendWeights;
-        [JsonConverter(typeof(StringEnumConverter))]
-        public GraphicsDeviceType GraphicsApi;
         public bool Batchmode;
         public string RenderThreadingMode;
         public bool GpuSkinning;
+        
+        // enum to string converter is stripped out in il2cpp builds
+        // and numbers are too unreadable so parsing to strings
+        public string Platform;
+        public string ColorSpace;
+        public string AnisotropicFiltering;
+        public string BlendWeights;
+        public string GraphicsApi;
+        
         // strings because their enums are editor only
         public string ScriptingBackend;
         public string AndroidTargetSdkVersion;

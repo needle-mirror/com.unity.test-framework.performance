@@ -24,7 +24,9 @@ namespace Unity.PerformanceTesting
 
         public void TestStarted(ITest test) { }
 
-        public void TestFinished(ITestResult result)
+        public void TestFinished(ITestResult result) { }
+
+        internal static void LogMetadata()
         {
             if (saved) return;
             var run = ReadPerformanceTestRun();
@@ -37,7 +39,7 @@ namespace Unity.PerformanceTesting
             saved = true;
         }
 
-        private Run ReadPerformanceTestRun()
+        private static Run ReadPerformanceTestRun()
         {
             try
             {
@@ -68,21 +70,21 @@ namespace Unity.PerformanceTesting
             };
         }
 
-        private void SetPlayerSettings(Run run)
+        private static void SetPlayerSettings(Run run)
         {
             run.Player.Vsync = QualitySettings.vSyncCount;
             run.Player.AntiAliasing = QualitySettings.antiAliasing;
-            run.Player.ColorSpace = QualitySettings.activeColorSpace;
-            run.Player.AnisotropicFiltering = QualitySettings.anisotropicFiltering;
-            run.Player.BlendWeights = QualitySettings.skinWeights;
+            run.Player.ColorSpace = QualitySettings.activeColorSpace.ToString();
+            run.Player.AnisotropicFiltering = QualitySettings.anisotropicFiltering.ToString();
+            run.Player.BlendWeights = QualitySettings.skinWeights.ToString();
             run.Player.ScreenRefreshRate = Screen.currentResolution.refreshRate;
             run.Player.ScreenWidth = Screen.currentResolution.width;
             run.Player.ScreenHeight = Screen.currentResolution.height;
             run.Player.Fullscreen = Screen.fullScreen;
             run.Player.Batchmode = Application.isBatchMode;
-            run.Player.Development = Debug.isDebugBuild;
-            run.Player.Platform = Application.platform;
-            run.Player.GraphicsApi = SystemInfo.graphicsDeviceType;
+            run.Player.Development = Application.isEditor ? true : Debug.isDebugBuild;
+            run.Player.Platform = Application.platform.ToString();
+            run.Player.GraphicsApi = SystemInfo.graphicsDeviceType.ToString();
         }
     }
 }
