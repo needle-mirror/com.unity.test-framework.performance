@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.7] - 2020-02-14
+
+Fix results parsing
+
 ## [2.0.6] - 2020-01-13
 
 Fix development player field

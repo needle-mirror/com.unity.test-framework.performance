@@ -90,6 +90,7 @@ namespace Unity.PerformanceTesting.Editor
                 var regex = new Regex(pattern);
                 var matches = regex.Match(element.Value);
                 if (matches.Groups.Count == 0) continue;
+                if (matches.Captures.Count == 0) continue;
 
                 if (matches.Groups[1].Captures.Count > 1)
                 {
