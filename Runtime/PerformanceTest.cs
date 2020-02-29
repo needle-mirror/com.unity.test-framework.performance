@@ -126,19 +126,9 @@ namespace Unity.PerformanceTesting
                 sampleGroup.UpdateStatistics();
             }
         }
-        
-        public void ShiftUnits()
-        {
-            foreach (var sampleGroup in SampleGroups)
-            {
-                sampleGroup.ShiftUnit();
-            }
-        }
 
-        
         private void LogOutput()
         {
-            ShiftUnits();
             TestContext.Out.WriteLine(ToString());
         }
 
@@ -149,19 +139,20 @@ namespace Unity.PerformanceTesting
             foreach (var sampleGroup in SampleGroups)
             {
                 logString.Append(sampleGroup.Name);
+                var ru = Utils.ShiftUnit(sampleGroup);
 
                 if (sampleGroup.Samples.Count == 1)
                 {
-                    logString.AppendFormat(" {0:0.00} {1}", sampleGroup.Samples[0],
-                        sampleGroup.Unit);
+                    logString.AppendFormat(" {0:0.00} {1}", sampleGroup.Samples[0]*ru.Ratio,
+                        ru.Unit);
                 }
                 else
                 {
                     logString.AppendFormat(
                         " {0} Median:{1:0.00} Min:{2:0.00} Max:{3:0.00} Avg:{4:0.00} Std:{5:0.00} SampleCount: {6} Sum: {7:0.00}",
-                        sampleGroup.Unit, sampleGroup.Median, sampleGroup.Min, sampleGroup.Max,
-                        sampleGroup.Average,
-                        sampleGroup.StandardDeviation, sampleGroup.Samples.Count, sampleGroup.Sum
+                        ru.Unit, sampleGroup.Median*ru.Ratio, sampleGroup.Min*ru.Ratio, sampleGroup.Max*ru.Ratio,
+                        sampleGroup.Average*ru.Ratio,
+                        sampleGroup.StandardDeviation*ru.Ratio, sampleGroup.Samples.Count, sampleGroup.Sum*ru.Ratio
                     );
                 }
 

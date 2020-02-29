@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.0.8] - 2020-02-20
+
+Fix profiler marker capture when changing scenes in editor tests
+Only shift samplegroups for UI
+
 ## [2.0.7] - 2020-02-14
 
 Fix results parsing

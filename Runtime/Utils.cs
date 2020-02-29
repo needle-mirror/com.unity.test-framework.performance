@@ -26,62 +26,68 @@ namespace Unity.PerformanceTesting.Runtime
             return (int)Math.Floor(diff.TotalSeconds);
         }
 
-        internal static void ShiftUnit(this Data.SampleGroup sg)
+        public class RatioUnit
         {
-            if (sg.Unit == SampleUnit.Undefined) return;
+            public SampleUnit Unit;
+            public double Ratio;
+        }
+        
+        internal static RatioUnit ShiftUnit(Data.SampleGroup sg)
+        {
+            var ru = new RatioUnit {Unit = sg.Unit, Ratio = 1D};
+            if (sg.Unit == SampleUnit.Undefined) return ru;
 
             while (true)
             {
-                if (sg.Median > 10000)
+                var sample = sg.Median * ru.Ratio;
+                if (sample > 10000)
                 {
-                    if (sg.Unit == SampleUnit.Second || sg.Unit == SampleUnit.Gigabyte)
+                    if (ru.Unit == SampleUnit.Second || ru.Unit == SampleUnit.Gigabyte)
                         break;
 
-                    Shrink(sg);
+                    Shrink(ru);
                     continue;
                 }
 
-                if (sg.Median < 10)
+                if (sample < 10)
                 {
-                    if (sg.Unit == SampleUnit.Nanosecond || sg.Unit == SampleUnit.Byte)
+                    if (ru.Unit == SampleUnit.Nanosecond || ru.Unit == SampleUnit.Byte)
                         break;
 
-                    Expand(sg);
+                    Expand(ru);
                     continue;
                 }
 
                 break;
             }
+
+            return ru;
         }
 
-        private static void Shrink(this Data.SampleGroup sg)
+        private static void Shrink(this RatioUnit ru)
         {
-            for (var i = 0; i < sg.Samples.Count; i++)
-            {
-                sg.Samples[i] = ConvertSample(sg.Unit, sg.Unit + 1, sg.Samples[i]);
-            }
-
-            sg.Unit += 1;
-            sg.UpdateStatistics();
+            ru.Ratio *= GetRatio(ru.Unit, ru.Unit + 1);
+            ru.Unit += 1;
         }
 
-        private static void Expand(this Data.SampleGroup sg)
+        private static void Expand(this RatioUnit ru)
         {
-            for (var i = 0; i < sg.Samples.Count; i++)
-            {
-                sg.Samples[i] = ConvertSample(sg.Unit, sg.Unit - 1, sg.Samples[i]);
-            }
+            ru.Ratio *= GetRatio(ru.Unit, ru.Unit - 1);
+            ru.Unit -= 1;
 
-            sg.Unit -= 1;
-            sg.UpdateStatistics();
         }
 
         public static double ConvertSample(SampleUnit from, SampleUnit to, double value)
         {
+            var ratio = GetRatio(from, to);
+            return value * ratio;
+        }
+
+        public static double GetRatio(SampleUnit from, SampleUnit to)
+        {
             double f = RelativeSampleUnit(from);
             double t = RelativeSampleUnit(to);
-
-            return value * (f / t);
+            return f / t;
         }
 
         public static double RelativeSampleUnit(SampleUnit unit)

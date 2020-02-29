@@ -99,6 +99,7 @@ namespace Unity.PerformanceTesting
 
             var go = new GameObject("Recorder");
             if (Application.isPlaying) Object.DontDestroyOnLoad(go);
+            go.hideFlags = HideFlags.HideAndDontSave;
             m_Test = go.AddComponent<ProfilerMarkerMeasurement>();
             m_Test.AddProfilerSample(profilerMarkers);
             PerformanceTest.Disposables.Add(this);
