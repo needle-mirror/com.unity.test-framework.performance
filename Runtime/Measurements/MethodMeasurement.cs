@@ -131,7 +131,8 @@ namespace Unity.PerformanceTesting.Measurements
                 sampleGroup.Recorder.enabled = false;
                 var sample = sampleGroup.Recorder.elapsedNanoseconds;
                 var blockCount = sampleGroup.Recorder.sampleBlockCount;
-                Measure.Custom(m_SampleGroup, (double)sample / blockCount);
+                if(blockCount == 0) continue;
+                Measure.Custom(sampleGroup, (double)sample / blockCount);
             }
         }
 

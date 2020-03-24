@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Unity.PerformanceTesting.Exceptions;
 using Unity.PerformanceTesting.Measurements;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -10,6 +11,10 @@ namespace Unity.PerformanceTesting
     {
         public static void Custom(SampleGroup sampleGroup, double value)
         {
+            if (double.IsNaN(value))
+                throw new PerformanceTestException(
+                    $"Trying to record value which is not a number for sample group: {sampleGroup.Name}");
+
             if (PerformanceTest.GetSampleGroup(sampleGroup.Name) == null)
             {
                 PerformanceTest.Active.SampleGroups.Add(sampleGroup);
@@ -20,6 +25,10 @@ namespace Unity.PerformanceTesting
 
         public static void Custom(string name, double value)
         {
+            if (double.IsNaN(value))
+                throw new PerformanceTestException(
+                    $"Trying to record value which is not a number for sample group: {name}");
+
             var sg = PerformanceTest.GetSampleGroup(name);
             if (sg == null)
             {

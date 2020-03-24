@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.0.9] - 2020-03-23
+
+Fix profiler measurements for method measurements
+Throw exceptions when measuring NaN
+
 ## [2.0.8] - 2020-02-20
 
 Fix profiler marker capture when changing scenes in editor tests
