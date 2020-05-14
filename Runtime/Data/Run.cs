@@ -8,7 +8,7 @@ namespace Unity.PerformanceTesting.Data
     public class Run
     {
         public string TestSuite;
-        public int Date;
+        public long Date;
         public Player Player;
         public Hardware Hardware;
         public Editor Editor;

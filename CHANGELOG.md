@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.0] - 2020-05-14
+
+Add flexible horizontal splitter for report window
+Fix date format
+
 ## [2.0.9] - 2020-03-23
 
 Fix profiler measurements for method measurements

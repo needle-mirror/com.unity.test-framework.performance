@@ -37,6 +37,11 @@ namespace Unity.PerformanceTesting
         private bool m_showSamples = true;
         private int[] m_columnWidth = new int[4];
 
+        private bool m_isResizing;
+        private float m_testListHeight = s_windowHeight / 4;
+        private Rect m_splitterRect;
+        private float m_windowHeight;
+
         [SerializeField]
         TreeViewState m_testListTreeViewState;
         [SerializeField]
@@ -260,9 +265,10 @@ namespace Unity.PerformanceTesting
                 {
                     if (m_testListTable != null)
                     {
-                        Rect r = GUILayoutUtility.GetRect(position.width, s_windowHeight / 4, GUI.skin.box,
+                        Rect r = GUILayoutUtility.GetRect(position.width, m_testListHeight, GUI.skin.box,
                             GUILayout.ExpandWidth(true));
                         m_testListTable.OnGUI(r);
+                        Resize(r.y);
                     }
                 }
 
@@ -350,6 +356,41 @@ namespace Unity.PerformanceTesting
             }
         }
 
+        private void Resize(float headerHeight)
+        {
+            m_splitterRect = new Rect(0, headerHeight + m_testListHeight, position.width, 5f);
+
+            EditorGUIUtility.AddCursorRect(m_splitterRect, MouseCursor.ResizeVertical);
+
+            if (Event.current.type == EventType.MouseDown)
+                m_isResizing = m_splitterRect.Contains(Event.current.mousePosition);
+
+            const float minListHeight = 80f;
+            var maxListHeight = position.height - 240f;
+            var needMoveSplitterAndRepaint = false;
+
+            if (m_isResizing && Event.current.type == EventType.MouseDrag)
+            {
+                m_testListHeight = Mathf.Clamp(Event.current.mousePosition.y - headerHeight, minListHeight, maxListHeight);
+                needMoveSplitterAndRepaint = true;
+            }
+            else if (Math.Abs(m_windowHeight - position.height) > float.Epsilon)
+            {
+                m_windowHeight = position.height;
+                m_testListHeight = Mathf.Clamp(m_testListHeight, minListHeight, maxListHeight);
+                needMoveSplitterAndRepaint = true;
+            }
+
+            if (needMoveSplitterAndRepaint)
+            {
+                m_splitterRect.Set(m_splitterRect.x, m_testListHeight, m_splitterRect.width, m_splitterRect.height);
+                Repaint();
+            }
+
+            if (Event.current.type == EventType.MouseUp)
+                m_isResizing = false;
+        }
+
         private void DrawBarGraph(float width, float height, List<double> samples, float min, float max, float median)
         {
             if (DrawStart(width, height))
@@ -395,7 +436,7 @@ namespace Unity.PerformanceTesting
                 {
                     float sample = (float)samples[i];
 
-                    string tooltip = string.Format("{0} (at sample {1} of {2})", sample, i, samples.Count);
+                    string tooltip = string.Format("{0} (at sample {1} of {2})", sample, i+1, samples.Count);
 
                     GUI.Label(new Rect(rect.x + x, rect.y + y, xAxisInc, height), new GUIContent("", tooltip));
 

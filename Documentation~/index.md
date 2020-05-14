@@ -11,7 +11,7 @@ The Performance Testing Extension is intended to be used with, and complement, t
 
 To install the Performance Testing Extension package
 1. Open the `manifest.json` file for your Unity project (located in the YourProject/Packages directory) in a text editor
-2. Add `"com.unity.test-framework.performance": "2.0.9-preview",` to the dependencies
+2. Add `"com.unity.test-framework.performance": "2.1.0-preview",` to the dependencies
 3. Save the manifest.json file
 4. Verify the Performance Testing Extension is now installed opening the Unity Package Manager window
 
@@ -334,6 +334,131 @@ public static string GetScenePath(string name)
 }
 ```
 
+## Writing a simple test
+
+As an example, to measure the performance of Vector2 operations you can use `Measure.Method`. This executes the provided method and samples performance. You can increase `MeasurementCount` from the default of 7 to 20 to achieve better performance test stability. You can execute a `Vector2.MoveTowards` test in Edit or Play mode. 
+
+``` csharp
+[Test, Performance]
+public void Vector2_operations()
+{
+    var a = Vector2.one;
+    var b = Vector2.zero;
+
+    Measure.Method(() =>
+    {
+            Vector2.MoveTowards(a, b, 0.5f);
+            Vector2.ClampMagnitude(a, 0.5f);
+            Vector2.Reflect(a, b);
+            Vector2.SignedAngle(a, b);
+    })
+        .MeasurementCount(20)
+        .Run();
+}
+```
+
+To view the results, go to **Window > Analysis > Performance Test Report**.
+
+![Performance test example01](images/example01.png)
+
+In this example, the results show that the first method execution took five times longer than the subsequent methods, and those subsequent method executions were unstable. Also, you can’t tell from these test results how long it took for each Vector2 operation to execute.
+
+### Improving test stability
+
+You can improve this test in several ways. First, try to improve test stability. Test instability at the beginning of a test can occur for several reasons, such as entering Play mode or method initialization, because the tested method is quite fast and more sensitive to other running background processes. To improve this, add `WarmupCount(n)`. This allows you to execute methods before you start to record data, so Unity doesn’t record method initialization. The simplest way to increase test execution time is to repeat the method in a loop.
+Avoid having measurements that are less than 1ms because they are usually more sensitive to unstable environments.
+To help you track each operation's execution times, split the Vector2 operations into several tests. Usually, when writing a test, you use setup and clean up methods to isolate the test environment. However, in this case, methods are isolated and do not affect other methods, therefore they do not need a cleanup or setup.
+The following code example shows a performance test for the `Vector2.MoveTowards` operation. Other Vector2 performance tests are identical.
+
+``` csharp
+[Test, Performance]
+public void Vector2_MoveTowards()
+{
+
+    Measure.Method(() =>
+    {
+        Vector2.MoveTowards(Vector2.one, Vector2.zero, 0.5f);
+    })
+        .WarmupCount(5)
+        .IterationsPerMeasurement(10000)
+        .MeasurementCount(20)
+        .Run();
+}
+```
+
+With 100000 iterations in this test, there is a small fluctuation in method execution time, but the standard deviation is low, which means the test is reasonably stable.
+
+![Performance test example02](images/example02.png)
+
+As an example, if you want to measure a method that only runs in Play mode (for example `Physics.Raycast`), you can use `Measure.Frames()`, which records time per frame by default. To only measure `Physics.Raycast` time, you can disable frame time measurements with `DontRecordFrametime` and just measure the `Physics.Raycast` profiler marker.
+This test creates objects that you need to dispose of at the end of each test, because multiple unnecessary objects can affect the next test results. Use the SetUp method to create GameObjects, and the TearDown method to destroy the created GameObjects after each test. 
+
+``` csharp
+[SetUp]
+public void SetUp()
+{
+    for (int i = 0; i < 100; ++i)
+    {
+        GameObject raycaster = new GameObject("raycast", typeof(Raycast));
+        raycaster.transform.SetParent(_parent.transform);
+    }
+}
+
+[UnityTest, Performance]
+public IEnumerator Physics_RaycastTests()
+{
+    string profilierMarker = "Physics.Raycast";
+    
+    yield return Measure.Frames()
+        .WarmupCount(3)
+        .DontRecordFrametime()
+        .MeasurementCount(10)
+        .ProfilerMarkers(profilierMarker)
+        .Run();
+}
+
+public class Raycast : MonoBehaviour
+{
+    private void Update()
+    {
+        RaycastHit hit;
+        bool ray = Physics.Raycast(
+            transform.position, 
+            Vector3.forward, 
+            out hit, 
+            Mathf.Infinity);
+    }
+}
+
+[TearDown]
+public void TearDown()
+{
+    GameObject.DestroyImmediate(_parent);
+}
+```
+
+To record your own measurements, create a new sample group and record a custom metric. The following examples measures `Allocated` and `Reserved` memory.
+
+``` csharp
+[Test, Performance]
+public void Empty()
+{
+    var allocated = new SampleGroup("TotalAllocatedMemory", SampleUnit.Megabyte);
+    var reserved = new SampleGroup("TotalReservedMemory", SampleUnit.Megabyte);
+
+    using (Measure.Scope())
+    {
+        Measure.Custom(allocated, Profiler.GetTotalAllocatedMemoryLong() / 1048576f);
+        Measure.Custom(reserved, Profiler.GetTotalReservedMemoryLong() / 1048576f);
+    }
+}
+```
+
+Before you start to collect package performance data, make sure that the tests you run locally are stable (the data set deviation is <5%). In the **Performance Test Report** window check whether the test isn’t fluctuating and that the results between runs are similar. 
+
+Performance test results run on a local machine can be significantly different compared to  previous test runs because there could be other applications running in the background, or CPU overheating or CPU boosting is enabled. Make sure that CPU intensive applications are turned off where possible. You can disable CPU boost in the BIOS or by using third-parties software, such as Real Temp.
+
+For compairing performance data between runs use [Unity Performance Benchmark Reporter](https://github.com/Unity-Technologies/PerformanceBenchmarkReporter/wiki). Unity Performance Benchmark Reporter provides you with a graphical HTML report that enables you to compare performance metric baselines and subsequent performance metrics.
 
 ## More Examples
 

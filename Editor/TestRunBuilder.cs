@@ -27,7 +27,7 @@ namespace Unity.PerformanceTesting.Editor
             run.Dependencies = GetPackageDependencies();
             SetBuildSettings(run);
 
-            run.Date = (int)Utils.ConvertToUnixTimestamp(DateTime.Now);
+            run.Date = Utils.ConvertToUnixTimestamp(DateTime.Now);
 
             CreateResourcesFolder();
             CreatePerformanceTestRunJson(run);
