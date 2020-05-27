@@ -1,4 +1,7 @@
 using System;
+#if USE_CUSTOM_METADATA
+using com.unity.test.metadatamanager;
+#endif
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.TestRunner;
@@ -15,6 +18,7 @@ namespace Unity.PerformanceTesting
     public class PlayerCallbacks : ITestRunCallback
     {
         internal static bool saved;
+
         public void RunStarted(ITest testsToRun) { }
 
         public void RunFinished(ITestResult testResults)
@@ -33,11 +37,24 @@ namespace Unity.PerformanceTesting
             run.Hardware = GetHardware();
             SetPlayerSettings(run);
             run.TestSuite = Application.isPlaying ? "Playmode" : "Editmode";
-
+#if USE_CUSTOM_METADATA
+            SetCustomMetadata(run);
+#endif
             var json = JsonConvert.SerializeObject(run);
             TestContext.Out?.WriteLine("##performancetestruninfo2:" + json);
             saved = true;
         }
+
+#if USE_CUSTOM_METADATA
+        private static void SetCustomMetadata(Run run)
+        {
+            var customMetadataManager = new CustomMetadataManager(run.Dependencies);
+            // This field is historically not used so we can safely store additional string delimited
+            // metadata here, then parse the metadata values out on the SQL side to give us access
+            // to additional metadata that would normally require a schema change, or a property back field
+            run.Player.AndroidTargetSdkVersion = customMetadataManager.GetCustomMetadata();
+        }
+#endif
 
         private static Run ReadPerformanceTestRun()
         {

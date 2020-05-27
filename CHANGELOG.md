@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.2.0] - 2020-05-26
+
+Add support for custom metadata
+
 ## [2.1.0] - 2020-05-14
 
 Add flexible horizontal splitter for report window
