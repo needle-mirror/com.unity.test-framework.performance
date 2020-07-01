@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.3.1] - 2020-07-01
+
+Fix overhead introduced with Measure.Method no longer calculates execution time of Setup and Cleanup changes
+
+## [2.3.0] - 2020-06-17
+
+Fix Measure.Method overhead
+Measure.Method no longer caclulates execution time of Setup and Cleanup
+Overwritten test name will be displyed with method name in Test Result viewer
+
 ## [2.2.0] - 2020-05-26
 
 Add support for custom metadata

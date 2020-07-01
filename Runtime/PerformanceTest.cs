@@ -50,9 +50,15 @@ namespace Unity.PerformanceTesting
             go.hideFlags = HideFlags.HideAndDontSave;
             var performanceTestHelper = go.AddComponent<PerformanceTestHelper>();
 
+            string methodName = currentTest.Name.Contains("(")
+                ? currentTest.Name.Remove(currentTest.Name.IndexOf("(", StringComparison.Ordinal))
+                : currentTest.Name;
+
+            var fullName = currentTest.MethodName != methodName ? $"{currentTest.ClassName}.{currentTest.MethodName}.{currentTest.Name}" : currentTest.FullName;
+
             var test = new PerformanceTest
             {
-                Name = currentTest.FullName,
+                Name = fullName,
                 Categories = currentTest.GetAllCategoriesFromTest(),
                 Version = GetVersion(currentTest),
                 m_PerformanceTestHelper = performanceTestHelper
@@ -81,7 +87,6 @@ namespace Unity.PerformanceTesting
         internal static void EndTest(ITest test)
         {
             if (test.IsSuite) return;
-            if (test.FullName != Active.Name) return;
 
             if (Active.m_PerformanceTestHelper != null && Active.m_PerformanceTestHelper.gameObject != null)
                 UnityEngine.Object.DestroyImmediate(Active.m_PerformanceTestHelper.gameObject);

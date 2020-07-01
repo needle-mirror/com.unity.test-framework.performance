@@ -31,6 +31,7 @@ namespace Unity.PerformanceTesting.Measurements
         {
             m_Action = action;
             m_GCRecorder = Recorder.Get("GC.Alloc");
+            m_GCRecorder.enabled = false;
             m_Watch = Stopwatch.StartNew();
         }
 
@@ -155,8 +156,8 @@ namespace Unity.PerformanceTesting.Measurements
 
             if (iterations == 1)
             {
-                ExecuteActionWithCleanupWarmup();
-                ExecuteActionWithCleanupWarmup();
+                ExecuteActionWithCleanupSetup();
+                ExecuteActionWithCleanupSetup();
 
                 return 1;
             }
@@ -171,15 +172,19 @@ namespace Unity.PerformanceTesting.Measurements
         {
             for (var i = 0; i < iterations; i++)
             {
-                ExecuteActionWithCleanupWarmup();
+                ExecuteActionWithCleanupSetup();
             }
         }
 
-        private void ExecuteActionWithCleanupWarmup()
+        private double ExecuteActionWithCleanupSetup()
         {
             m_Setup?.Invoke();
+            var executionTime = m_Watch.Elapsed.TotalMilliseconds;
             m_Action.Invoke();
+            executionTime = m_Watch.Elapsed.TotalMilliseconds - executionTime;
             m_Cleanup?.Invoke();
+            
+            return executionTime;
         }
         
         private double ExecuteSingleIteration()
@@ -199,13 +204,25 @@ namespace Unity.PerformanceTesting.Measurements
         private double ExecuteForIterations(int iterations)
         {
             if (m_GC) StartGCRecorder();
-            var executionTime = m_Watch.Elapsed.TotalMilliseconds;
-            for (var i = 0; i < iterations; i++)
+            var executionTime = 0.0D;
+            
+            if (m_Cleanup != null || m_Setup != null)
             {
-                ExecuteActionWithCleanupWarmup();
+                for (var i = 0; i < iterations; i++)
+                {
+                    executionTime += ExecuteActionWithCleanupSetup();
+                } 
             }
-
-            executionTime = m_Watch.Elapsed.TotalMilliseconds - executionTime;
+            else
+            {
+                executionTime = m_Watch.Elapsed.TotalMilliseconds;
+                for (var i = 0; i < iterations; i++)
+                {
+                    m_Action.Invoke();
+                }
+                executionTime = m_Watch.Elapsed.TotalMilliseconds - executionTime;
+            }
+            
             if (m_GC) EndGCRecorderAndMeasure(iterations);
             return executionTime;
         }

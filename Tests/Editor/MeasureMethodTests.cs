@@ -43,6 +43,34 @@ public class MeasureTimerTests
         Assert.AreEqual(test.SampleGroups[0].Samples.Count, 10);
         Assert.AreEqual(30, s_CallCount);
     }
+    
+    [Test, Performance]
+    public void MeasureMethod_Setup_Run()
+    {
+        s_CallCount = 0;
+        Measure.Method(() => { })
+            .MeasurementCount(10)
+            .SetUp(() => s_CallCount++)
+            .Run();
+
+        var test = PerformanceTest.Active;
+        Assert.AreEqual(test.SampleGroups[0].Samples.Count, 10);
+        Assert.AreEqual(10, s_CallCount);
+    }
+    
+    [Test, Performance]
+    public void MeasureMethodCleanup_Run()
+    {
+        s_CallCount = 0;
+        Measure.Method(() => { })
+            .MeasurementCount(10)
+            .CleanUp(() => s_CallCount++)
+            .Run();
+
+        var test = PerformanceTest.Active;
+        Assert.AreEqual(test.SampleGroups[0].Samples.Count, 10);
+        Assert.AreEqual(10, s_CallCount);
+    }
 
     [Test, Performance]
     public void MeasureMethod_MeasurementAndIterationCount_Run()
