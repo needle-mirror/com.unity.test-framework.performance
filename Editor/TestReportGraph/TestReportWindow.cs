@@ -27,8 +27,14 @@ namespace Unity.PerformanceTesting
         public Color m_colorMedianLine = new Color(0.2f, 0.5f, 1.0f, 0.5f);
         public Color m_colorMedianText = new Color(0.4f, 0.7f, 1.0f, 1.0f);
         public Color m_colorWarningText = Color.red;
-        private Run m_resultsData;
+        private Run m_resultsData = null;
         private string m_selectedTest;
+
+        private DateTime m_lastResultsDateTime = new DateTime(0);
+        private bool m_NewerFileExists = false;
+        private double m_LastFileCheckTime = 0f;
+        private float m_FileCheckFrequencySeconds = 3f;
+        private bool m_AutoRefresh = false;
 
         private List<string> m_sampleGroups = new List<string>();
 
@@ -60,7 +66,7 @@ namespace Unity.PerformanceTesting
             m_testListMulticolumnHeaderState = TestListTable.CreateDefaultMultiColumnHeaderState(700);
 
             var multiColumnHeader = new MultiColumnHeader(m_testListMulticolumnHeaderState);
-            multiColumnHeader.SetSorting((int)TestListTable.MyColumns.Name, false);
+            multiColumnHeader.SetSorting((int)TestListTable.MyColumns.Index, true);
             multiColumnHeader.ResizeToFit();
             m_testListTable = new TestListTable(m_testListTreeViewState, multiColumnHeader, this);
         }
@@ -122,13 +128,53 @@ namespace Unity.PerformanceTesting
             return true;
         }
 
+        private string GetResultsPath()
+        {
+            return Path.Combine(Application.persistentDataPath, "PerformanceTestResults.json");
+        }
+
+        private bool NewerFileExists()
+        {
+            m_LastFileCheckTime = EditorApplication.timeSinceStartup;
+
+            string filePath = GetResultsPath();
+            if (!File.Exists(filePath))
+                return false;
+
+            if (m_resultsData == null)
+                return true;
+
+            DateTime dateTime = File.GetLastWriteTime(GetResultsPath());
+            if ((dateTime - m_lastResultsDateTime).TotalMilliseconds > 0)
+                return true;
+
+            return false;
+        }
+
+        private void ResetFileCheck()
+        {
+            m_lastResultsDateTime = File.GetLastWriteTime(GetResultsPath());
+            m_NewerFileExists = false;
+            m_LastFileCheckTime = EditorApplication.timeSinceStartup;
+        }
+
+        private bool CheckIfNewerFileExists()
+        {
+            if (EditorApplication.timeSinceStartup - m_LastFileCheckTime < m_FileCheckFrequencySeconds)
+                return m_NewerFileExists;
+
+            m_NewerFileExists = NewerFileExists();
+            return m_NewerFileExists;
+        }
+
         private void LoadData()
         {
-            string filePath = Path.Combine(Application.persistentDataPath, "PerformanceTestResults.json");
+            string filePath = GetResultsPath();
             if (!File.Exists(filePath)) return;
 
             string json = File.ReadAllText(filePath);
             m_resultsData = JsonConvert.DeserializeObject<Run>(json);
+            ResetFileCheck();
 
             List<SamplePoint> samplePoints = new List<SamplePoint>();
 
@@ -168,6 +214,11 @@ namespace Unity.PerformanceTesting
             LoadData();
         }
 
+        private void OnFocus()
+        {
+            CheckIfNewerFileExists();
+        }
+
         private void OnGUI()
         {
             if (m_glStyle == null)
@@ -184,6 +235,13 @@ namespace Unity.PerformanceTesting
             }
 
             Draw();
+        }
+
+        private void Update()
+        {
+            CheckIfNewerFileExists();
+            if (m_NewerFileExists && m_AutoRefresh)
+                Refresh();
         }
 
         private double GetPercentageOffset(List<SamplePoint> samplePoint, float percent, out int outputFrameIndex)
@@ -236,22 +294,103 @@ namespace Unity.PerformanceTesting
             EditorGUILayout.EndHorizontal();
         }
 
+        private void Refresh()
+        {
+            LoadData();
+            CreateTestListTable();
+            if (m_resultsData == null) return;
+            if (m_resultsData.Results == null) return;
+            if (m_resultsData.Results.Any(result => result.Name == m_selectedTest))
+                SelectTest(m_selectedTest);
+            else
+                SelectTest(0);
+
+            Repaint();
+        }
+
+        private void Export()
+        {
+            if (m_resultsData == null)
+                return;
+
+            if (m_resultsData.Results.Count <= 0)
+                return;
+
+            string path = EditorUtility.SaveFilePanel("Save CSV data", "", "testResults.csv", "csv");
+            if (path.Length != 0)
+            {
+                using (StreamWriter file = new StreamWriter(path))
+                {
+                    file.Write("Index, ");
+                    file.Write("Test Name, ");
+                    file.Write("Version, ");
+                    file.Write("SampleGroup Name, ");
+                    file.Write("Unit, ");
+                    file.Write("IncreaseIsBetter, ");
+                    file.Write("Min, ");
+                    file.Write("Max, ");
+                    file.Write("Median, ");
+                    file.Write("Average, ");
+                    file.Write("StandardDeviation, ");
+                    file.Write("Sum, ");
+                    file.Write("Values, ");
+                    file.WriteLine("");
+
+                    int index = 0;
+                    foreach (var result in m_resultsData.Results)
+                    {
+                        foreach (var sampleGroup in result.SampleGroups)
+                        {
+
+                            file.Write("{0},", index);
+                            file.Write("\"{0}\",", result.Name);
+                            file.Write("{0},", result.Version);
+                            file.Write("\"{0}\",", sampleGroup.Name);
+                            file.Write("\"{0}\",", sampleGroup.Unit.ToString());
+                            file.Write("{0},", sampleGroup.IncreaseIsBetter);
+                            file.Write("{0},", sampleGroup.Min);
+                            file.Write("{0},", sampleGroup.Max);
+                            file.Write("{0},", sampleGroup.Median);
+                            file.Write("{0},", sampleGroup.Average);
+                            file.Write("{0},", sampleGroup.StandardDeviation);
+                            file.Write("{0},", sampleGroup.Sum);
+
+                            foreach (var value in sampleGroup.Samples)
+                            {
+                                file.Write("{0},", value);
+                            }
+                            file.WriteLine("");
+                            index++;
+                        }
+                    }
+                }
+            }
+        }
+
         private void Draw()
         {
             GUIStyle selectedStyle = new GUIStyle(GUI.skin.label);
             selectedStyle.fontStyle = FontStyle.Bold;
 
-            if (GUILayout.Button("Refresh"))
+            GUILayout.BeginHorizontal();
+            m_AutoRefresh = GUILayout.Toggle(m_AutoRefresh, "Auto Refresh");
+            if (GUILayout.Button("Refresh", GUILayout.Width(100)))
+                Refresh();
+            GUILayout.Label(string.Format("Last results {0}", m_lastResultsDateTime));
+            if (m_NewerFileExists)
             {
-                LoadData();
-                CreateTestListTable();
-                if (m_resultsData == null) return;
-                if (m_resultsData.Results == null) return;
-                if (m_resultsData.Results.Any(result => result.Name == m_selectedTest))
-                    SelectTest(m_selectedTest);
+                if (m_AutoRefresh)
+                    Refresh();
                 else
-                    SelectTest(0);
+                    GUILayout.Label(" - New data available");
             }
+            GUILayout.FlexibleSpace();
+            if (m_resultsData != null && m_resultsData.Results.Count > 0)
+            {
+                if (GUILayout.Button("Export", GUILayout.Width(100)))
+                    Export();
+            }
+            GUILayout.EndHorizontal();
 
             if (m_resultsData == null)
                 return;

@@ -11,10 +11,13 @@ namespace Unity.PerformanceTesting
 {
     class TestListTableItem : TreeViewItem
     {
+        public int index;
         public TestResult test;
         public double deviation;
         public double standardDeviation;
         public double median;
+        public double min;
+        public double max;
 
         public TestListTableItem(int id, int depth, string displayName, TestResult test)
             : base(id, depth,
@@ -22,6 +25,7 @@ namespace Unity.PerformanceTesting
         {
             this.test = test;
 
+            index = id;
             deviation = 0f;
             if (test != null)
             {
@@ -29,25 +33,35 @@ namespace Unity.PerformanceTesting
                 {
                     if (sample.Name == "Time")
                     {
-                        deviation = sample.StandardDeviation;
+                        standardDeviation = sample.StandardDeviation;
                         median = sample.Median;
+                        min = sample.Min;
+                        max = sample.Max;
+
+                        deviation = standardDeviation / median;
                         break;
                     }
 
                     if (sample.Samples.Count <= 1)
                     {
+                        standardDeviation = sample.StandardDeviation;
                         median = sample.Median;
+                        min = sample.Min;
+                        max = sample.Max;
+
+                        deviation = standardDeviation / median;
                         break;
                     }
-
-                    if (sample.StandardDeviation > deviation)
-                        standardDeviation = sample.StandardDeviation;
 
                     double thisDeviation = sample.StandardDeviation / sample.Median;
                     if (thisDeviation > deviation)
                     {
-                        deviation = thisDeviation;
+                        standardDeviation = sample.StandardDeviation;
                         median = sample.Median;
+                        min = sample.Min;
+                        max = sample.Max;
+
+                        deviation = thisDeviation;
                     }
                 }
             }
@@ -64,30 +78,39 @@ namespace Unity.PerformanceTesting
         // All columns
         public enum MyColumns
         {
+            Index,
             Name,
             SampleCount,
             StandardDeviation,
             Deviation,
-            Median
+            Median,
+            Min,
+            Max,
         }
 
         public enum SortOption
         {
+            Index,
             Name,
             SampleCount,
             StandardDeviation,
             Deviation,
-            Median
+            Median,
+            Min,
+            Max,
         }
 
         // Sort options per column
         SortOption[] m_SortOptions =
         {
+            SortOption.Index,
             SortOption.Name,
             SortOption.SampleCount,
             SortOption.StandardDeviation,
             SortOption.Deviation,
-            SortOption.Median
+            SortOption.Median,
+            SortOption.Min,
+            SortOption.Max,
         };
 
         public TestListTable(TreeViewState state, MultiColumnHeader multicolumnHeader,
@@ -201,6 +224,9 @@ namespace Unity.PerformanceTesting
 
                 switch (sortOption)
                 {
+                    case SortOption.Index:
+                        orderedQuery = orderedQuery.ThenBy(l => l.index, ascending);
+                        break;
                     case SortOption.Name:
                         orderedQuery = orderedQuery.ThenBy(l => l.displayName, ascending);
                         break;
@@ -216,6 +242,12 @@ namespace Unity.PerformanceTesting
                     case SortOption.Median:
                         orderedQuery = orderedQuery.ThenBy(l => l.median, ascending);
                         break;
+                    case SortOption.Min:
+                        orderedQuery = orderedQuery.ThenBy(l => l.min, ascending);
+                        break;
+                    case SortOption.Max:
+                        orderedQuery = orderedQuery.ThenBy(l => l.max, ascending);
+                        break;
                 }
             }
 
@@ -228,6 +260,8 @@ namespace Unity.PerformanceTesting
             bool ascending = multiColumnHeader.IsSortedAscending(history[0]);
             switch (sortOption)
             {
+                case SortOption.Index:
+                    return myTypes.Order(l => l.index, ascending);
                 case SortOption.Name:
                     return myTypes.Order(l => l.displayName, ascending);
                 case SortOption.SampleCount:
@@ -238,13 +272,17 @@ namespace Unity.PerformanceTesting
                     return myTypes.Order(l => l.standardDeviation, ascending);
                 case SortOption.Median:
                     return myTypes.Order(l => l.median, ascending);
+                case SortOption.Min:
+                    return myTypes.Order(l => l.min, ascending);
+                case SortOption.Max:
+                    return myTypes.Order(l => l.max, ascending);
                 default:
                     Assert.IsTrue(false, "Unhandled enum");
                     break;
             }
 
             // default
-            return myTypes.Order(l => l.displayName, ascending);
+            return myTypes.Order(l => l.index, ascending);
         }
 
         protected override void RowGUI(RowGUIArgs args)
@@ -264,11 +302,11 @@ namespace Unity.PerformanceTesting
 
             switch (column)
             {
+                case MyColumns.Index:
+                    EditorGUI.LabelField(cellRect, string.Format("{0}", item.index));
+                    break;
                 case MyColumns.Name:
-                {
-                    args.rowRect = cellRect;
-                    base.RowGUI(args);
-                }
+                    EditorGUI.LabelField(cellRect, string.Format("{0}", item.displayName));
                     break;
                 case MyColumns.SampleCount:
                     EditorGUI.LabelField(cellRect, string.Format("{0}", item.test.SampleGroups.Count));
@@ -282,6 +320,12 @@ namespace Unity.PerformanceTesting
                 case MyColumns.Median:
                     EditorGUI.LabelField(cellRect, string.Format("{0:f2}", item.median));
                     break;
+                case MyColumns.Min:
+                    EditorGUI.LabelField(cellRect, string.Format("{0:f2}", item.min));
+                    break;
+                case MyColumns.Max:
+                    EditorGUI.LabelField(cellRect, string.Format("{0:f2}", item.max));
+                    break;
             }
         }
 
@@ -293,37 +337,54 @@ namespace Unity.PerformanceTesting
             return false;
         }
 
+        struct HeaderData
+        {
+            public readonly GUIContent content;
+            public readonly float width;
+            public readonly float minWidth;
+            public readonly bool autoResize;
+            public readonly bool allowToggleVisibility;
+            public readonly bool ascending;
+
+            public HeaderData(string name, string tooltip = "", float width = 100, float minWidth = 50, bool autoResize = true, bool allowToggleVisibility = true, bool ascending = false)
+            {
+                content = new GUIContent(name, tooltip);
+                this.width = width;
+                this.minWidth = minWidth;
+                this.autoResize = autoResize;
+                this.allowToggleVisibility = allowToggleVisibility;
+                this.ascending = ascending;
+            }
+        }
+
         public static MultiColumnHeaderState CreateDefaultMultiColumnHeaderState(float treeViewWidth)
         {
             var columnList = new List<MultiColumnHeaderState.Column>();
-            columnList.Add(new MultiColumnHeaderState.Column
+            HeaderData[] headerData = new HeaderData[]
             {
-                headerContent = new GUIContent("Name"),
-                headerTextAlignment = TextAlignment.Left,
-                sortedAscending = true,
-                sortingArrowAlignment = TextAlignment.Left,
-                width = 600,
-                minWidth = 100,
-                autoResize = false,
-                allowToggleVisibility = false
-            });
-            string[] names = { "Sample Groups", "Standard Deviation", "Deviation", "Median" };
-            foreach (var name in names)
+                new HeaderData("Index", "Ordering from the test run", width : 40, minWidth : 50),
+                new HeaderData("Name", "Name of test", width : 500, minWidth : 100, autoResize : false, allowToggleVisibility : false, ascending : true),
+                new HeaderData("Groups", "Number of Sample Groups", width : 60, minWidth : 50),
+                new HeaderData("SD", "Standard Deviation"), //  (of sample group with largest deviation)
+                new HeaderData("Deviation", "Standard Deviation / Median"),
+                new HeaderData("Median", "Median value"),
+                new HeaderData("Min", "Min value"),
+                new HeaderData("Max", "Max value"),
+            };
+            foreach (var header in headerData)
             {
-                var column = new MultiColumnHeaderState.Column
+                columnList.Add(new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent(name),
+                    headerContent = header.content,
                     headerTextAlignment = TextAlignment.Left,
-                    sortedAscending = true,
+                    sortedAscending = header.ascending,
                     sortingArrowAlignment = TextAlignment.Left,
-                    width = 100,
-                    minWidth = 50,
-                    autoResize = true
-                };
-                columnList.Add(column);
-            }
-
-            ;
+                    width = header.width,
+                    minWidth = header.minWidth,
+                    autoResize = header.autoResize,
+                    allowToggleVisibility = header.allowToggleVisibility
+                });
+            };
             var columns = columnList.ToArray();
 
             Assert.AreEqual(columns.Length, Enum.GetValues(typeof(MyColumns)).Length,
@@ -332,11 +393,14 @@ namespace Unity.PerformanceTesting
             var state = new MultiColumnHeaderState(columns);
             state.visibleColumns = new int[]
             {
+                (int)MyColumns.Index,
                 (int)MyColumns.Name,
                 (int)MyColumns.SampleCount,
                 (int)MyColumns.Deviation,
                 (int)MyColumns.StandardDeviation,
-                (int)MyColumns.Median
+                (int)MyColumns.Median,
+                (int)MyColumns.Min,
+                (int)MyColumns.Max,
             };
             return state;
         }

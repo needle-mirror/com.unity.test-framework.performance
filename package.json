@@ -1,7 +1,7 @@
 {
   "name": "com.unity.test-framework.performance",
   "displayName": "Performance testing API",
-  "version": "2.3.1-preview",
+  "version": "2.4.1-preview",
   "unity": "2019.3",
   "unityRelease": "0a10",
   "description": "Extension to the Unity Test framework package. Adds performance testing capabilities and collects configuration metadata.",
@@ -11,14 +11,14 @@
   ],
   "dependencies": {
     "com.unity.test-framework": "1.1.0",
-    "com.unity.nuget.newtonsoft-json": "2.0.0-preview"
+    "com.unity.nuget.newtonsoft-json": "2.0.0"
   },
   "upmCi": {
-    "footprint": "6785338b363ed02bc9d3dd6366b7f643ff55b789"
+    "footprint": "5d259dbf559572091dad4578e4de7a0718e6293e"
   },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.test-framework.performance.git",
     "type": "git",
-    "revision": "f3bcc9ec6b911cc61eed160ca116d7fa33ae4b0a"
+    "revision": "57b368b2be39ee1829715bc597c2aea9ca38c6cb"
   }
 }

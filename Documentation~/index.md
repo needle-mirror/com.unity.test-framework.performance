@@ -11,12 +11,19 @@ The Performance Testing Extension is intended to be used with, and complement, t
 
 To install the Performance Testing Extension package
 1. Open the `manifest.json` file for your Unity project (located in the YourProject/Packages directory) in a text editor
-2. Add `"com.unity.test-framework.performance": "2.3.1-preview",` to the dependencies
+2. Add `"com.unity.test-framework.performance": "2.4.0",` to the dependencies
 3. Save the manifest.json file
 4. Verify the Performance Testing Extension is now installed opening the Unity Package Manager window
 
 To access performance testing apis add `Unity.PerformanceTesting` to your assembly definition references section.
 
+Performance package will need to be preserved in link.xml file if Managed stripping level is enabled in Player settings. This is nesesarry for console and mobile platforms.
+
+```xml
+<linker>
+       <assembly fullname="Unity.PerformanceTesting" preserve="all"/>
+</linker>
+```
 
 ## Test Attributes
 **[Performance]** - Use this with  `Test` and `UnityTest` attributes. It will initialize necessary test setup for performance tests.
@@ -61,6 +68,9 @@ This will execute the provided method, sampling performance using the following 
 * **IterationsPerMeasurement(int n)** - number of method executions per measurement to use. If this value is not specified, the method will be executed as many times as possible until approximately 100 ms has elapsed.
 * **SampleGroup(string name)** - by default the measurement name will be "Time", this allows you to override it
 * **GC()** - if specified, will measure the total number of Garbage Collection allocation calls.
+* **SetUp(Action action)** - is called every iteration before executing the method. Setup time is not measured.
+* **CleanUp(Action action)** - is called every iteration after the execution of the method. Cleanup time is not measured.
+
 
 #### Example 1: Simple method measurement using default values
 
@@ -83,6 +93,8 @@ public void Test()
         .MeasurementCount(10)
         .IterationsPerMeasurement(5)
         .GC()
+        .SetUp(()=> {/*setup code*/})
+        .CleanUp(()=> {/*cleanup code*/})
         .Run();
 }
 ```
@@ -177,7 +189,7 @@ public void Test()
 
 ### Measure.ProfilerMarkers()
 
-Used to record profiler markers. Profiler marker timings will be recorded automatically and sampled within the scope of the `using` statement. Names should match profiler marker labels. Note that deep and editor profiling are not available. Profiler markers created using `Profiler.BeginSample()` are not supported, switch to `ProfilerMarker` if possible. 
+Used to record profiler markers. Profiler marker timings will be recorded automatically and sampled within the scope of the `using` statement. Names should match profiler marker labels. Profiler markers are sampled once per frame. Sampling the same profiler marker per frame will result in the sum of all invocations. Note that deep and editor profiling is not available. Profiler markers created using `Profiler.BeginSample()` are not supported, switch to `ProfilerMarker` if possible. 
 
 #### Example 1: Measuring profiler markers in a scope
 

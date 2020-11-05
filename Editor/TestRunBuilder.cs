@@ -10,27 +10,36 @@ using Unity.PerformanceTesting.Runtime;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 
 [assembly: PrebuildSetup(typeof(TestRunBuilder))]
 [assembly: PostBuildCleanup(typeof(TestRunBuilder))]
 
 namespace Unity.PerformanceTesting.Editor
 {
-    public class TestRunBuilder : IPrebuildSetup, IPostBuildCleanup
+    public class TestRunBuilder : IPrebuildSetup, IPostBuildCleanup, IPreprocessBuildWithReport
     {
         private const string cleanResources = "PT_ResourcesCleanup";
 
-        public void Setup()
+        public int callbackOrder
         {
-            var run = new Run();
-            run.Editor = GetEditorInfo();
-            run.Dependencies = GetPackageDependencies();
-            SetBuildSettings(run);
+            get { return 0; }
+        }
 
-            run.Date = Utils.ConvertToUnixTimestamp(DateTime.Now);
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            var run = CreateRunInfo();
 
             CreateResourcesFolder();
             CreatePerformanceTestRunJson(run);
+        }
+
+        public void Setup()
+        {
+            var run = CreateRunInfo();
+            EditorPrefs.SetBool(cleanResources, false);
+            CreatePerformancePlayerPreferences(run);
         }
 
         static List<string> GetPackageDependencies()
@@ -83,7 +92,7 @@ namespace Unity.PerformanceTesting.Editor
             {
                 if (method.Name.Contains("GetUnityBuildBranch"))
                 {
-                    return (string)method.Invoke(null, null);
+                    return (string) method.Invoke(null, null);
                 }
             }
 
@@ -105,6 +114,26 @@ namespace Unity.PerformanceTesting.Editor
             run.Player.StereoRenderingPath = PlayerSettings.stereoRenderingPath.ToString();
         }
 
+        public Run CreateRunInfo()
+        {
+            var run = new Run();
+            run.Editor = GetEditorInfo();
+            run.Dependencies = GetPackageDependencies();
+            SetBuildSettings(run);
+            run.Date = Utils.ConvertToUnixTimestamp(DateTime.Now);
+
+            return run;
+        }
+
+        public Run GetPerformanceTestRun()
+        {
+            var run = CreateRunInfo();
+            Metadata.SetRuntimeSettings(run);
+
+            return run;
+        }
+
+
         private void CreateResourcesFolder()
         {
             if (Directory.Exists(Utils.ResourcesPath))
@@ -119,10 +148,16 @@ namespace Unity.PerformanceTesting.Editor
 
         private void CreatePerformanceTestRunJson(Run run)
         {
-            var json = JsonConvert.SerializeObject(run, Formatting.Indented);
-            PlayerPrefs.SetString(Utils.PlayerPrefKeyRunJSON, json);
+            var json = CreatePerformancePlayerPreferences(run);
             File.WriteAllText(Utils.TestRunPath, json);
             AssetDatabase.Refresh();
+        }
+
+        private string CreatePerformancePlayerPreferences(Run run)
+        {
+            var json = JsonConvert.SerializeObject(run, Formatting.Indented);
+            PlayerPrefs.SetString(Utils.PlayerPrefKeyRunJSON, json);
+            return json;
         }
     }
 }
