@@ -14,14 +14,18 @@ namespace Unity.PerformanceTesting
 
         public IEnumerator BeforeTest(ITest test)
         {
-            PerformanceTest.StartTest(test);
-            yield return null;
+            // domain reload will cause this method to be hit multiple times
+            // active performance test is serialized and survives reloads
+            if (PerformanceTest.Active == null)
+            {
+                PerformanceTest.StartTest(test);
+                yield return null;
+            }
         }
 
         public IEnumerator AfterTest(ITest test)
         {
             PerformanceTest.EndTest(test);
-            var t = PerformanceTest.Active;
             yield return null;
         }
     }

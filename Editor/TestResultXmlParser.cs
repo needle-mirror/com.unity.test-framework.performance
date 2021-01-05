@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using Newtonsoft.Json;
 using Unity.PerformanceTesting.Data;
 using UnityEngine;
 
@@ -112,11 +111,11 @@ namespace Unity.PerformanceTesting.Editor
             return null;
         }
 
-        private TestResult TryDeserializePerformanceTestResultJsonObject(string json)
+        private PerformanceTestResult TryDeserializePerformanceTestResultJsonObject(string json)
         {
             try
             {
-                return JsonConvert.DeserializeObject<TestResult>(json);
+                return JsonUtility.FromJson<PerformanceTestResult>(json);
             }
             catch (Exception e)
             {
@@ -131,7 +130,7 @@ namespace Unity.PerformanceTesting.Editor
         {
             try
             {
-                return JsonConvert.DeserializeObject<Run>(json);
+                return JsonUtility.FromJson<Run>(json);
             }
             catch (Exception e)
             {

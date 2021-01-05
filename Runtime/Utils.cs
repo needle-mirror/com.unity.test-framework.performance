@@ -31,7 +31,7 @@ namespace Unity.PerformanceTesting.Runtime
             public double Ratio;
         }
         
-        internal static RatioUnit ShiftUnit(Data.SampleGroup sg)
+        internal static RatioUnit ShiftUnit(SampleGroup sg)
         {
             var ru = new RatioUnit {Unit = sg.Unit, Ratio = 1D};
             if (sg.Unit == SampleUnit.Undefined) return ru;
@@ -115,7 +115,7 @@ namespace Unity.PerformanceTesting.Runtime
             }
         }
 
-        public static void UpdateStatistics(this Data.SampleGroup sampleGroup)
+        public static void UpdateStatistics(this SampleGroup sampleGroup)
         {
             if (sampleGroup.Samples == null) return;
             var samples = sampleGroup.Samples;

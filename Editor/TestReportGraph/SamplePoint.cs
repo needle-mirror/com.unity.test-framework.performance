@@ -1,18 +1,21 @@
 ﻿using System;
 
-struct SamplePoint : IComparable<SamplePoint>
+namespace Unity.PerformanceTesting.Editor
 {
-    public double sample;
-    public int index;
-
-    public SamplePoint(double _sample, int _index)
+    struct SamplePoint : IComparable<SamplePoint>
     {
-        sample = _sample;
-        index = _index;
-    }
+        public double sample;
+        public int index;
 
-    public int CompareTo(SamplePoint other)
-    {
-        return sample.CompareTo(other.sample);
+        public SamplePoint(double _sample, int _index)
+        {
+            sample = _sample;
+            index = _index;
+        }
+
+        public int CompareTo(SamplePoint other)
+        {
+            return sample.CompareTo(other.sample);
+        }
     }
 }

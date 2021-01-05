@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 using UnityEditor.TestTools.TestRunner.Api;
@@ -22,7 +21,10 @@ namespace Unity.PerformanceTesting.Editor
     [Serializable]
     public class PerformanceTestRunSaver : ScriptableObject, ICallbacks
     {
-        void ICallbacks.RunStarted(ITestAdaptor testsToRun) { }
+        void ICallbacks.RunStarted(ITestAdaptor testsToRun)
+        {
+            PerformanceTest.Active = null;
+        }
 
         void ICallbacks.RunFinished(ITestResultAdaptor result)
         {
@@ -37,7 +39,7 @@ namespace Unity.PerformanceTesting.Editor
                 var xmlParser = new TestResultXmlParser();
                 var run = xmlParser.GetPerformanceTestRunFromXml(xmlPath);
                 if (run == null) return;
-                File.WriteAllText(jsonPath, JsonConvert.SerializeObject(run, Formatting.Indented));
+                File.WriteAllText(jsonPath, JsonUtility.ToJson(run, true));
             }
             catch (Exception e)
             {

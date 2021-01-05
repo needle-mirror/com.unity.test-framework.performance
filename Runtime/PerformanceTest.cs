@@ -1,24 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
-using Newtonsoft.Json;
 using Unity.PerformanceTesting.Runtime;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
-using Unity.PerformanceTesting.Data;
 using Unity.PerformanceTesting.Exceptions;
 using UnityEngine;
 using UnityEngine.TestRunner.NUnitExtensions;
 
+[assembly: InternalsVisibleTo("Unity.PerformanceTesting.Tests.Editor")]
 namespace Unity.PerformanceTesting
 {
     [Serializable]
-    public class PerformanceTest : TestResult
+    public class PerformanceTest
     {
-        [SerializeField]
-        public new List<SampleGroup> SampleGroups = new List<SampleGroup>();
-
-        public static PerformanceTest Active { get; private set; }
+        public string Name;
+        public string Version;
+        public List<string> Categories = new List<string>();
+        public List<SampleGroup> SampleGroups = new List<SampleGroup>();
+        public static PerformanceTest Active { get; set; }
         internal static List<IDisposable> Disposables = new List<IDisposable>(1024);
         PerformanceTestHelper m_PerformanceTestHelper;
 
@@ -29,17 +30,6 @@ namespace Unity.PerformanceTesting
         public PerformanceTest()
         {
             Active = this;
-        }
-
-        class PerformanceTestHelper : MonoBehaviour
-        {
-            public PerformanceTest ActiveTest;
-
-            void OnEnable()
-            {
-                if (PerformanceTest.Active == null)
-                    PerformanceTest.Active = ActiveTest;
-            }
         }
 
         internal static void StartTest(ITest currentTest)
@@ -89,14 +79,16 @@ namespace Unity.PerformanceTesting
             if (test.IsSuite) return;
 
             if (Active.m_PerformanceTestHelper != null && Active.m_PerformanceTestHelper.gameObject != null)
+            {
                 UnityEngine.Object.DestroyImmediate(Active.m_PerformanceTestHelper.gameObject);
+            }
 
             DisposeMeasurements();
             Active.CalculateStatisticalValues();
             OnTestEnded?.Invoke();
             Active.LogOutput();
 
-            TestContext.Out.WriteLine("##performancetestresult2:" + JsonConvert.SerializeObject(Active));
+            TestContext.Out.WriteLine("##performancetestresult2:" + Active.Serialize());
             PlayerCallbacks.LogMetadata();
             Active = null;
             GC.Collect();
@@ -124,6 +116,16 @@ namespace Unity.PerformanceTesting
             return null;
         }
 
+        public static void AddSampleGroup(SampleGroup sampleGroup)
+        {
+            Active.SampleGroups.Add(sampleGroup);
+        }
+
+        internal string Serialize()
+        {
+            return JsonUtility.ToJson(Active);
+        }
+
         public void CalculateStatisticalValues()
         {
             foreach (var sampleGroup in SampleGroups)
@@ -148,16 +150,16 @@ namespace Unity.PerformanceTesting
 
                 if (sampleGroup.Samples.Count == 1)
                 {
-                    logString.AppendFormat(" {0:0.00} {1}", sampleGroup.Samples[0]*ru.Ratio,
+                    logString.AppendFormat(" {0:0.00} {1}", sampleGroup.Samples[0] * ru.Ratio,
                         ru.Unit);
                 }
                 else
                 {
                     logString.AppendFormat(
                         " {0} Median:{1:0.00} Min:{2:0.00} Max:{3:0.00} Avg:{4:0.00} Std:{5:0.00} SampleCount: {6} Sum: {7:0.00}",
-                        ru.Unit, sampleGroup.Median*ru.Ratio, sampleGroup.Min*ru.Ratio, sampleGroup.Max*ru.Ratio,
-                        sampleGroup.Average*ru.Ratio,
-                        sampleGroup.StandardDeviation*ru.Ratio, sampleGroup.Samples.Count, sampleGroup.Sum*ru.Ratio
+                        ru.Unit, sampleGroup.Median * ru.Ratio, sampleGroup.Min * ru.Ratio, sampleGroup.Max * ru.Ratio,
+                        sampleGroup.Average * ru.Ratio,
+                        sampleGroup.StandardDeviation * ru.Ratio, sampleGroup.Samples.Count, sampleGroup.Sum * ru.Ratio
                     );
                 }
 

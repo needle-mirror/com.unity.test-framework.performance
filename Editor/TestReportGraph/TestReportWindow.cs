@@ -6,11 +6,10 @@ using System;
 using UnityEditor.IMGUI.Controls;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 using Unity.PerformanceTesting.Data;
 using Unity.PerformanceTesting.Runtime;
 
-namespace Unity.PerformanceTesting
+namespace Unity.PerformanceTesting.Editor
 {
     public class TestReportWindow : EditorWindow
     {
@@ -57,6 +56,8 @@ namespace Unity.PerformanceTesting
         Vector2 m_sampleGroupScroll = new Vector2(0, 0);
         List<SampleGroupAdditionalData> m_sampleGroupAdditionalData = new List<SampleGroupAdditionalData>();
 
+        private const int m_chartLimit = 1000;
+
         private void CreateTestListTable()
         {
             if (m_testListTreeViewState == null)
@@ -97,7 +98,7 @@ namespace Unity.PerformanceTesting
             }
         }
 
-        public void SelectTest(TestResult result)
+        public void SelectTest(PerformanceTestResult result)
         {
             m_selectedTest = result.Name;
 
@@ -173,7 +174,7 @@ namespace Unity.PerformanceTesting
             if (!File.Exists(filePath)) return;
 
             string json = File.ReadAllText(filePath);
-            m_resultsData = JsonConvert.DeserializeObject<Run>(json);
+            m_resultsData = JsonUtility.FromJson<Run>(json);
             ResetFileCheck();
 
             List<SamplePoint> samplePoints = new List<SamplePoint>();
@@ -304,7 +305,6 @@ namespace Unity.PerformanceTesting
                 SelectTest(m_selectedTest);
             else
                 SelectTest(0);
-
             Repaint();
         }
 
@@ -446,7 +446,7 @@ namespace Unity.PerformanceTesting
                         {
                             var data = m_sampleGroupAdditionalData[dataIndex];
                             dataIndex++;
-
+                            var samplesToDraw = sampleGroup.Samples;
                             float min = data.min;
                             float lowerQuartile = data.lowerQuartile;
                             float median = data.median;
@@ -461,7 +461,12 @@ namespace Unity.PerformanceTesting
                                 GUILayout.ExpandHeight(false));
                             EditorGUILayout.LabelField(sampleGroup.Name, m_boldStyle);
                             EditorGUILayout.LabelField("Sample Unit: " + sampleGroup.Unit.ToString());
-
+                            if (samplesToDraw.Count > m_chartLimit)
+                            {
+                                string message = string.Format("Sample Group has more than {0} Samples. The first {0} Samples will be displayed. However, calculations are done according to the all samples received from the test run.", m_chartLimit);
+                                EditorGUILayout.HelpBox(message, MessageType.Warning, true);
+                                samplesToDraw = samplesToDraw.Take(m_chartLimit).ToList();
+                            }
                             EditorGUILayout.BeginHorizontal(GUILayout.Height(100), GUILayout.ExpandHeight(false));
 
                             EditorGUILayout.BeginVertical(GUILayout.Width(100), GUILayout.ExpandHeight(true));
@@ -480,7 +485,7 @@ namespace Unity.PerformanceTesting
                             GUILayout.FlexibleSpace();
                             Draw2Column("Min", min);
                             EditorGUILayout.EndVertical();
-                            DrawBarGraph(position.width - 200, 100, sampleGroup.Samples, graphMin, max, median);
+                            DrawBarGraph(position.width - 200, 100, samplesToDraw, graphMin, max, median);
                             DrawBoxAndWhiskerPlot(50, 100, min, lowerQuartile, median, upperQuartile, max, min, max,
                                 (float)sampleGroup.StandardDeviation, m_colorWhite, m_colorBoxAndWhiskerBackground);
                             EditorGUILayout.EndHorizontal();

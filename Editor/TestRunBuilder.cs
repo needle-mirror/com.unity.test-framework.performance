@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
 using Unity.PerformanceTesting.Data;
 using Unity.PerformanceTesting.Editor;
 using Unity.PerformanceTesting.Runtime;
@@ -155,7 +154,7 @@ namespace Unity.PerformanceTesting.Editor
 
         private string CreatePerformancePlayerPreferences(Run run)
         {
-            var json = JsonConvert.SerializeObject(run, Formatting.Indented);
+            var json = JsonUtility.ToJson(run, true);
             PlayerPrefs.SetString(Utils.PlayerPrefKeyRunJSON, json);
             return json;
         }

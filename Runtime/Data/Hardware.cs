@@ -2,6 +2,7 @@ using System;
 
 namespace Unity.PerformanceTesting.Data
 {
+    [Serializable]
     public class Hardware
     {
         public string OperatingSystem;

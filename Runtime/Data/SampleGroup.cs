@@ -4,6 +4,7 @@ using Unity.PerformanceTesting.Exceptions;
 
 namespace Unity.PerformanceTesting.Data
 {
+    [Serializable]
     public class SampleGroup
     {
         public string Name;
@@ -17,6 +18,7 @@ namespace Unity.PerformanceTesting.Data
         public double StandardDeviation;
         public double Sum;
 
+        public SampleGroup(){}
         public SampleGroup(string name, SampleUnit unit, bool increaseIsBetter)
         {
             Name = name;

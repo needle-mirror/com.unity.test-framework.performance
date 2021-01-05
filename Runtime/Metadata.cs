@@ -1,5 +1,4 @@
 using System;
-using Newtonsoft.Json;
 using Unity.PerformanceTesting.Data;
 using Unity.PerformanceTesting.Runtime;
 using UnityEngine;
@@ -18,7 +17,7 @@ namespace Unity.PerformanceTesting
             {
                 var runResource = Resources.Load<TextAsset>(Utils.TestRunInfo.Replace(".json", ""));
                 var json = Application.isEditor ? PlayerPrefs.GetString(Utils.PlayerPrefKeyRunJSON) : runResource.text;
-                var run = JsonConvert.DeserializeObject<Run>(json);
+                var run = JsonUtility.FromJson<Run>(json);
                 return run;
             }
             catch (Exception e)

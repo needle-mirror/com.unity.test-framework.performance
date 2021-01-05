@@ -1,11 +1,9 @@
 using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Unity.PerformanceTesting.Data
 {
+    [Serializable]
     public class Player
     {
         public bool Development;

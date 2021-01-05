@@ -13,6 +13,6 @@ namespace Unity.PerformanceTesting.Data
         public Hardware Hardware;
         public Editor Editor;
         public List<string> Dependencies = new List<string>();
-        public List<TestResult> Results = new List<TestResult>();
+        public List<PerformanceTestResult> Results = new List<PerformanceTestResult>();
     }
 }

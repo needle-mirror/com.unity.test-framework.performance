@@ -11,32 +11,37 @@ namespace Unity.PerformanceTesting
     {
         public static void Custom(SampleGroup sampleGroup, double value)
         {
-            if (double.IsNaN(value))
-                throw new PerformanceTestException(
-                    $"Trying to record value which is not a number for sample group: {sampleGroup.Name}");
+            VerifyValue(sampleGroup.Name, value);
 
-            if (PerformanceTest.GetSampleGroup(sampleGroup.Name) == null)
+            var activeSampleGroup = PerformanceTest.GetSampleGroup(sampleGroup.Name);
+            if (activeSampleGroup == null)
             {
-                PerformanceTest.Active.SampleGroups.Add(sampleGroup);
+                PerformanceTest.AddSampleGroup(sampleGroup);
+                activeSampleGroup = sampleGroup;
             }
 
-            sampleGroup.Samples.Add(value);
+            activeSampleGroup.Samples.Add(value);
         }
 
         public static void Custom(string name, double value)
         {
+            VerifyValue(name, value);
+
+            var activeSampleGroup = PerformanceTest.GetSampleGroup(name);
+            if (activeSampleGroup == null)
+            {
+                activeSampleGroup = new SampleGroup(name);
+                PerformanceTest.AddSampleGroup(activeSampleGroup);
+            }
+
+            activeSampleGroup.Samples.Add(value);
+        }
+
+        static void VerifyValue(string name, double value)
+        {
             if (double.IsNaN(value))
                 throw new PerformanceTestException(
                     $"Trying to record value which is not a number for sample group: {name}");
-
-            var sg = PerformanceTest.GetSampleGroup(name);
-            if (sg == null)
-            {
-                sg = new SampleGroup(name);
-                PerformanceTest.Active.SampleGroups.Add(sg);
-            }
-
-            sg.Samples.Add(value);
         }
 
         public static ScopeMeasurement Scope(string name = "Time")

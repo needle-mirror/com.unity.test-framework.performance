@@ -1,35 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.PerformanceTesting.Data;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Unity.PerformanceTesting.Data;
 
-namespace Unity.PerformanceTesting
+namespace Unity.PerformanceTesting.Editor
 {
     class TestListTableItem : TreeViewItem
     {
         public int index;
-        public TestResult test;
+        public PerformanceTestResult performanceTest;
         public double deviation;
         public double standardDeviation;
         public double median;
         public double min;
         public double max;
 
-        public TestListTableItem(int id, int depth, string displayName, TestResult test)
+        public TestListTableItem(int id, int depth, string displayName, PerformanceTestResult performanceTest)
             : base(id, depth,
                 displayName)
         {
-            this.test = test;
+            this.performanceTest = performanceTest;
 
             index = id;
             deviation = 0f;
-            if (test != null)
+            if (performanceTest != null)
             {
-                foreach (var sample in test.SampleGroups)
+                foreach (var sample in performanceTest.SampleGroups)
                 {
                     if (sample.Name == "Time")
                     {
@@ -231,7 +231,7 @@ namespace Unity.PerformanceTesting
                         orderedQuery = orderedQuery.ThenBy(l => l.displayName, ascending);
                         break;
                     case SortOption.SampleCount:
-                        orderedQuery = orderedQuery.ThenBy(l => l.test.SampleGroups.Count, ascending);
+                        orderedQuery = orderedQuery.ThenBy(l => l.performanceTest.SampleGroups.Count, ascending);
                         break;
                     case SortOption.Deviation:
                         orderedQuery = orderedQuery.ThenBy(l => l.deviation, ascending);
@@ -265,7 +265,7 @@ namespace Unity.PerformanceTesting
                 case SortOption.Name:
                     return myTypes.Order(l => l.displayName, ascending);
                 case SortOption.SampleCount:
-                    return myTypes.Order(l => l.test.SampleGroups.Count, ascending);
+                    return myTypes.Order(l => l.performanceTest.SampleGroups.Count, ascending);
                 case SortOption.Deviation:
                     return myTypes.Order(l => l.deviation, ascending);
                 case SortOption.StandardDeviation:
@@ -309,7 +309,7 @@ namespace Unity.PerformanceTesting
                     EditorGUI.LabelField(cellRect, string.Format("{0}", item.displayName));
                     break;
                 case MyColumns.SampleCount:
-                    EditorGUI.LabelField(cellRect, string.Format("{0}", item.test.SampleGroups.Count));
+                    EditorGUI.LabelField(cellRect, string.Format("{0}", item.performanceTest.SampleGroups.Count));
                     break;
                 case MyColumns.Deviation:
                     EditorGUI.LabelField(cellRect, string.Format("{0:f2}", item.deviation));

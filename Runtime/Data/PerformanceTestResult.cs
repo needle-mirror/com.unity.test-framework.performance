@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 namespace Unity.PerformanceTesting.Data
 {
-    public class TestResult
+    [Serializable]
+    public class PerformanceTestResult
     {
         public string Name;
         public string Version;

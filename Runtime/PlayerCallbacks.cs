@@ -1,8 +1,8 @@
-using Newtonsoft.Json;
 using UnityEngine.TestRunner;
 using Unity.PerformanceTesting;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
+using UnityEngine;
 
 [assembly: TestRunCallback(typeof(PlayerCallbacks))]
 
@@ -34,7 +34,7 @@ namespace Unity.PerformanceTesting
             if (saved) return;
 
             var run = Metadata.GetFromResources();
-            var json = JsonConvert.SerializeObject(run);
+            var json = JsonUtility.ToJson(run);
             TestContext.Out?.WriteLine("##performancetestruninfo2:" + json);
             saved = true;
         }

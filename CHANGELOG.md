@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.5.1] - 2021-01-05
+
+Fix serialization for Performance Test Report window
+
+
+## [2.5.0] - 2020-12-29
+
+Add domain reload support
+Switch from Newtonsoft.Json to Unity json module
+
+
 ## [2.4.1] - 2020-11-05
 
 Metadata collection was made public
