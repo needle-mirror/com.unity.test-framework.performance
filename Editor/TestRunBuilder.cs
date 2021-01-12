@@ -17,7 +17,7 @@ using UnityEditor.Build.Reporting;
 
 namespace Unity.PerformanceTesting.Editor
 {
-    public class TestRunBuilder : IPrebuildSetup, IPostBuildCleanup, IPreprocessBuildWithReport
+    public class TestRunBuilder : IPrebuildSetup, IPostBuildCleanup, IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
         private const string cleanResources = "PT_ResourcesCleanup";
 
@@ -32,6 +32,11 @@ namespace Unity.PerformanceTesting.Editor
 
             CreateResourcesFolder();
             CreatePerformanceTestRunJson(run);
+        }
+        
+        public void OnPostprocessBuild(BuildReport report)
+        {
+            Cleanup();
         }
 
         public void Setup()

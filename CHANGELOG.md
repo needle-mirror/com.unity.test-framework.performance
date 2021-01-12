@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.6.0] - 2021-01-12
+
+Add build configuration support
+
 ## [2.5.1] - 2021-01-05
 
 Fix serialization for Performance Test Report window
