@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using Unity.PerformanceTesting.Exceptions;
+using Unity.PerformanceTesting.Meters;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -8,7 +9,7 @@ namespace Unity.PerformanceTesting.Measurements
 {
     public class MethodMeasurement
     {
-        private const int k_MeasurementCount = 9;
+        internal const int k_MeasurementCount = 9;
         private const int k_MinMeasurementTimeMs = 100;
         private const int k_MinWarmupTimeMs = 100;
         private const int k_ProbingMultiplier = 4;
@@ -25,14 +26,21 @@ namespace Unity.PerformanceTesting.Measurements
         private int m_MeasurementCount;
         private int m_IterationCount = 1;
         private bool m_GC;
-        private readonly Stopwatch m_Watch;
+        private IStopWatch m_Watch;
 
         public MethodMeasurement(Action action)
         {
             m_Action = action;
             m_GCRecorder = Recorder.Get("GC.Alloc");
             m_GCRecorder.enabled = false;
-            m_Watch = Stopwatch.StartNew();
+            if (m_Watch == null) m_Watch = new StopWatch();
+        }
+
+        internal MethodMeasurement StopWatch(IStopWatch watch)
+        {
+            m_Watch = watch;
+
+            return this;
         }
 
         public MethodMeasurement ProfilerMarkers(params string[] profilerMarkerNames)
@@ -97,21 +105,22 @@ namespace Unity.PerformanceTesting.Measurements
             if (m_MeasurementCount > 0)
             {
                 Warmup(m_WarmupCount);
-                RunForIterations(m_IterationCount, m_MeasurementCount);
+                RunForIterations(m_IterationCount, m_MeasurementCount, useAverage: false);
                 return;
             }
 
             var iterations = Probing();
-            RunForIterations(iterations, k_MeasurementCount);
+            RunForIterations(iterations, k_MeasurementCount, useAverage: true);
         }
 
-        private void RunForIterations(int iterations, int measurements)
+        private void RunForIterations(int iterations, int measurements, bool useAverage)
         {
             EnableMarkers();
             for (var j = 0; j < measurements; j++)
             {
                 var executionTime = iterations == 1 ? ExecuteSingleIteration() : ExecuteForIterations(iterations);
-                Measure.Custom(m_SampleGroup, executionTime / iterations);
+                if (useAverage) executionTime /= iterations;
+                Measure.Custom(m_SampleGroup, executionTime);
             }
 
             DisableAndMeasureMarkers();
@@ -132,8 +141,8 @@ namespace Unity.PerformanceTesting.Measurements
                 sampleGroup.Recorder.enabled = false;
                 var sample = sampleGroup.Recorder.elapsedNanoseconds;
                 var blockCount = sampleGroup.Recorder.sampleBlockCount;
-                if(blockCount == 0) continue;
-                Measure.Custom(sampleGroup, (double)sample / blockCount);
+                if (blockCount == 0) continue;
+                Measure.Custom(sampleGroup, (double) sample / blockCount);
             }
         }
 
@@ -142,11 +151,15 @@ namespace Unity.PerformanceTesting.Measurements
             var executionTime = 0.0D;
             var iterations = 1;
 
+            if (m_WarmupCount > 0)
+                throw new PerformanceTestException(
+                    "Please provide MeasurementCount or remove WarmupCount in your usage of Measure.Method");
+
             while (executionTime < k_MinWarmupTimeMs)
             {
-                executionTime = m_Watch.Elapsed.TotalMilliseconds;
+                executionTime = m_Watch.Split();
                 Warmup(iterations);
-                executionTime = m_Watch.Elapsed.TotalMilliseconds - executionTime;
+                executionTime = m_Watch.Split() - executionTime;
 
                 if (executionTime < k_MinWarmupTimeMs)
                 {
@@ -163,7 +176,7 @@ namespace Unity.PerformanceTesting.Measurements
             }
 
             var deisredIterationsCount =
-                Mathf.Clamp((int)(k_MinMeasurementTimeMs * iterations / executionTime), 1, k_MaxIterations);
+                Mathf.Clamp((int) (k_MinMeasurementTimeMs * iterations / executionTime), 1, k_MaxIterations);
 
             return deisredIterationsCount;
         }
@@ -172,29 +185,31 @@ namespace Unity.PerformanceTesting.Measurements
         {
             for (var i = 0; i < iterations; i++)
             {
-                ExecuteActionWithCleanupSetup();
+                ExecuteForIterations(m_IterationCount);
             }
         }
 
         private double ExecuteActionWithCleanupSetup()
         {
             m_Setup?.Invoke();
-            var executionTime = m_Watch.Elapsed.TotalMilliseconds;
+
+            var executionTime = m_Watch.Split();
             m_Action.Invoke();
-            executionTime = m_Watch.Elapsed.TotalMilliseconds - executionTime;
+            executionTime = m_Watch.Split() - executionTime;
+
             m_Cleanup?.Invoke();
-            
+
             return executionTime;
         }
-        
+
         private double ExecuteSingleIteration()
         {
             if (m_GC) StartGCRecorder();
             m_Setup?.Invoke();
 
-            var executionTime = m_Watch.Elapsed.TotalMilliseconds;
+            var executionTime = m_Watch.Split();
             m_Action.Invoke();
-            executionTime = m_Watch.Elapsed.TotalMilliseconds - executionTime;
+            executionTime = m_Watch.Split() - executionTime;
 
             m_Cleanup?.Invoke();
             if (m_GC) EndGCRecorderAndMeasure(1);
@@ -205,24 +220,25 @@ namespace Unity.PerformanceTesting.Measurements
         {
             if (m_GC) StartGCRecorder();
             var executionTime = 0.0D;
-            
+
             if (m_Cleanup != null || m_Setup != null)
             {
                 for (var i = 0; i < iterations; i++)
                 {
                     executionTime += ExecuteActionWithCleanupSetup();
-                } 
+                }
             }
             else
             {
-                executionTime = m_Watch.Elapsed.TotalMilliseconds;
+                executionTime = m_Watch.Split();
                 for (var i = 0; i < iterations; i++)
                 {
                     m_Action.Invoke();
                 }
-                executionTime = m_Watch.Elapsed.TotalMilliseconds - executionTime;
+
+                executionTime = m_Watch.Split() - executionTime;
             }
-            
+
             if (m_GC) EndGCRecorderAndMeasure(iterations);
             return executionTime;
         }

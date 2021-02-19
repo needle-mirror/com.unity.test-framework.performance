@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0] - 2021-02-19
+
+Reduce metadata overhead when running locally by caching dependencies
+Remove the need for link.xml
+Restructured documentation
+Fixed method measurement IterationsPerMeasurement
+
 ## [2.6.0] - 2021-01-12
 
 Add build configuration support

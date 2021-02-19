@@ -46,15 +46,31 @@ namespace Unity.PerformanceTesting.Editor
             CreatePerformancePlayerPreferences(run);
         }
 
+#if !UNITY_2021_1_OR_NEWER
+        private static List<string> cachedDependencies;
+#endif
         static List<string> GetPackageDependencies()
         {
+#if !UNITY_2021_1_OR_NEWER
+            if (cachedDependencies != null)
+                return cachedDependencies;
+#endif
+
+            IEnumerable<UnityEditor.PackageManager.PackageInfo> packages;
+#if !UNITY_2021_1_OR_NEWER
             var listRequest = UnityEditor.PackageManager.Client.List(true);
             while (!listRequest.IsCompleted)
                 System.Threading.Thread.Sleep(10);
             if (listRequest.Status == UnityEditor.PackageManager.StatusCode.Failure)
                 Debug.LogError("Failed to list local packages");
-            var packages = new List<UnityEditor.PackageManager.PackageInfo>(listRequest.Result);
+            packages = new List<UnityEditor.PackageManager.PackageInfo>(listRequest.Result);
+#else
+            packages = UnityEditor.PackageManager.PackageInfo.GetAllRegisteredPackages();
+#endif
             var reformated = packages.Select(p => $"{p.name}@{p.version}").ToList();
+#if !UNITY_2021_1_OR_NEWER
+            cachedDependencies = reformated;
+#endif
             return reformated;
         }
 
@@ -66,7 +82,7 @@ namespace Unity.PerformanceTesting.Editor
                 File.Delete(Utils.TestRunPath + ".meta");
             }
 
-            if (EditorPrefs.GetBool(cleanResources))
+            if (EditorPrefs.GetBool(cleanResources) && Directory.Exists("Assets/Resources"))
             {
                 Directory.Delete("Assets/Resources/", true);
                 File.Delete("Assets/Resources.meta");

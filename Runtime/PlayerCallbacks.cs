@@ -2,12 +2,14 @@ using UnityEngine.TestRunner;
 using Unity.PerformanceTesting;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
+using UnityEngine.Scripting;
 using UnityEngine;
 
 [assembly: TestRunCallback(typeof(PlayerCallbacks))]
 
 namespace Unity.PerformanceTesting
 {
+    [Preserve]
     public class PlayerCallbacks : ITestRunCallback
     {
         internal static bool saved;
