@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using Unity.PerformanceTesting.Exceptions;
 using Unity.PerformanceTesting.Measurements;
+using Unity.PerformanceTesting.Runtime;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -48,10 +49,20 @@ namespace Unity.PerformanceTesting
         {
             return new ScopeMeasurement(name);
         }
+        
+        public static ScopeMeasurement Scope(SampleGroup sampleGroup)
+        {
+            return new ScopeMeasurement(sampleGroup);
+        }
 
         public static ProfilerMeasurement ProfilerMarkers(params string[] profilerMarkerLabels)
         {
             return new ProfilerMeasurement(profilerMarkerLabels);
+        }
+        
+        public static ProfilerMeasurement ProfilerMarkers(params SampleGroup[] sampleGroups)
+        {
+            return new ProfilerMeasurement(sampleGroups);
         }
 
         public static MethodMeasurement Method(Action action)
@@ -70,12 +81,12 @@ namespace Unity.PerformanceTesting
         private readonly SampleGroup m_SampleGroup;
         private readonly long m_StartTicks;
 
-        public ScopeMeasurement(string name)
+        public ScopeMeasurement(SampleGroup sampleGroup)
         {
-            m_SampleGroup = PerformanceTest.GetSampleGroup(name);
+            m_SampleGroup = PerformanceTest.GetSampleGroup(sampleGroup.Name);
             if (m_SampleGroup == null)
             {
-                m_SampleGroup = new SampleGroup(name);
+                m_SampleGroup = sampleGroup;
                 PerformanceTest.Active.SampleGroups.Add(m_SampleGroup);
             }
 
@@ -83,11 +94,17 @@ namespace Unity.PerformanceTesting
             PerformanceTest.Disposables.Add(this);
         }
 
+        public ScopeMeasurement(string name) : this(new SampleGroup(name))
+        {
+        }
+
         public void Dispose()
         {
             var elapsedTicks = Stopwatch.GetTimestamp() - m_StartTicks;
             PerformanceTest.Disposables.Remove(this);
             var delta = TimeSpan.FromTicks(elapsedTicks).TotalMilliseconds;
+            
+            delta = Utils.ConvertSample(SampleUnit.Millisecond, m_SampleGroup.Unit, delta);
 
             Measure.Custom(m_SampleGroup, delta);
         }
@@ -97,15 +114,15 @@ namespace Unity.PerformanceTesting
     {
         private readonly ProfilerMarkerMeasurement m_Test;
 
-        public ProfilerMeasurement(string[] profilerMarkers)
+        public ProfilerMeasurement(SampleGroup[] sampleGroups)
         {
-            if (profilerMarkers == null)
+            if (sampleGroups == null)
             {
                 m_Test = null;
                 return;
             }
 
-            if (profilerMarkers.Length == 0)
+            if (sampleGroups.Length == 0)
             {
                 m_Test = null;
                 return;
@@ -115,8 +132,12 @@ namespace Unity.PerformanceTesting
             if (Application.isPlaying) Object.DontDestroyOnLoad(go);
             go.hideFlags = HideFlags.HideAndDontSave;
             m_Test = go.AddComponent<ProfilerMarkerMeasurement>();
-            m_Test.AddProfilerSample(profilerMarkers);
+            m_Test.AddProfilerSampleGroup(sampleGroups);
             PerformanceTest.Disposables.Add(this);
+        }
+
+        public ProfilerMeasurement(string[] profilerMarkers): this(Utils.CreateSampleGroupsFromMarkerNames(profilerMarkers))
+        {
         }
 
         public void Dispose()

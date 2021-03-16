@@ -15,7 +15,7 @@ public class GenericTests
 
         var dt = Utils.ConvertFromUnixTimestamp(946688461001);
 
-        Assert.AreEqual(dt.Ticks, date.Ticks);
+        Assert.AreEqual(date.Ticks, dt.Ticks);
     }
 
     [Performance, Test]
@@ -26,26 +26,26 @@ public class GenericTests
 
         var stamp = Utils.ConvertToUnixTimestamp(dt);
 
-        Assert.AreEqual(stamp, 946688461001);
+        Assert.AreEqual(946688461001, stamp);
     }
 
     [Performance, Test]
     public void Default_VersionAttribute_IsSet()
     {
-        Assert.AreEqual(PerformanceTest.Active.Version, "1");
+        Assert.AreEqual("1", PerformanceTest.Active.Version);
     }
 
     [Performance, Test, Version("TEST")]
     public void VersionAttribute_IsSet()
     {
-        Assert.AreEqual(PerformanceTest.Active.Version, "TEST");
+        Assert.AreEqual("TEST", PerformanceTest.Active.Version);
     }
 
     [TestCase("1"), TestCase("2")]
     [Performance, Version("TEST")]
     public void VersionAttribute_IsSet_OnTestCase(string name)
     {
-        Assert.AreEqual(PerformanceTest.Active.Version, "TEST");
+        Assert.AreEqual("TEST", PerformanceTest.Active.Version);
     }
 
     [Performance, Test]
@@ -79,19 +79,19 @@ public class ClassVersionTests
     [Test, Performance]
     public void Default_VersionAttribute_IsSet()
     {
-        Assert.AreEqual(PerformanceTest.Active.Version, "1.1");
+        Assert.AreEqual("1.1", PerformanceTest.Active.Version);
     }
 
     [Test, Performance, Version("TEST")]
     public void VersionAttribute_IsSet()
     {
-        Assert.AreEqual(PerformanceTest.Active.Version, "1.TEST");
+        Assert.AreEqual("1.TEST", PerformanceTest.Active.Version);
     }
 
     [TestCase("1"), TestCase("2")]
     [Test, Performance, Version("TEST")]
     public void VersionAttribute_IsSet_OnTestCase(string name)
     {
-        Assert.AreEqual(PerformanceTest.Active.Version, "1.TEST");
+        Assert.AreEqual("1.TEST", PerformanceTest.Active.Version);
     }
 }

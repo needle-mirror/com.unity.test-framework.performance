@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Unity.PerformanceTesting.Runtime;
 using Unity.PerformanceTesting.Exceptions;
 using Unity.PerformanceTesting.Meters;
 using UnityEngine;
@@ -56,11 +57,31 @@ namespace Unity.PerformanceTesting.Measurements
 
             return this;
         }
+        
+        public MethodMeasurement ProfilerMarkers(params SampleGroup[] sampleGroups)
+        {
+            if (sampleGroups == null){ return this;}
+            foreach (var sampleGroup in sampleGroups)
+            {
+                sampleGroup.GetRecorder();
+                sampleGroup.Recorder.enabled = false;
+                m_SampleGroups.Add(sampleGroup);
+            }
+
+            return this;
+        }
 
         public MethodMeasurement SampleGroup(string name)
         {
             m_SampleGroup = new SampleGroup(name, SampleUnit.Millisecond, false);
             m_SampleGroupGC = new SampleGroup(name + ".GC()", SampleUnit.Undefined, false);
+            return this;
+        }
+        
+        public MethodMeasurement SampleGroup(SampleGroup sampleGroup)
+        {
+            m_SampleGroup = sampleGroup;
+            m_SampleGroupGC = new SampleGroup(sampleGroup.Name + ".GC()", SampleUnit.Undefined, false);
             return this;
         }
 
@@ -120,7 +141,8 @@ namespace Unity.PerformanceTesting.Measurements
             {
                 var executionTime = iterations == 1 ? ExecuteSingleIteration() : ExecuteForIterations(iterations);
                 if (useAverage) executionTime /= iterations;
-                Measure.Custom(m_SampleGroup, executionTime);
+                var delta = Utils.ConvertSample(SampleUnit.Millisecond, m_SampleGroup.Unit, executionTime);
+                Measure.Custom(m_SampleGroup, delta);
             }
 
             DisableAndMeasureMarkers();
@@ -141,8 +163,9 @@ namespace Unity.PerformanceTesting.Measurements
                 sampleGroup.Recorder.enabled = false;
                 var sample = sampleGroup.Recorder.elapsedNanoseconds;
                 var blockCount = sampleGroup.Recorder.sampleBlockCount;
-                if (blockCount == 0) continue;
-                Measure.Custom(sampleGroup, (double) sample / blockCount);
+                if(blockCount == 0) continue;
+                var delta = Utils.ConvertSample(SampleUnit.Nanosecond, sampleGroup.Unit, sample);
+                Measure.Custom(sampleGroup, delta / blockCount);
             }
         }
 

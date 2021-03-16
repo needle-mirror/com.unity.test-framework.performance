@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.8.0] - 2021-03-16
+
+Add overloads to measurements for overriding sample unit
+Fix cases where cleanup throws an exception
+
 ## [2.7.0] - 2021-02-19
 
 Reduce metadata overhead when running locally by caching dependencies

@@ -14,9 +14,9 @@ public class MeasureScope
         }
 
         var result = PerformanceTest.Active;
-        Assert.That(result.SampleGroups.Count, Is.EqualTo(1));
-        Assert.That(result.SampleGroups[0].Samples[0], Is.GreaterThan(0.0f));
-        AssertDefinition(result.SampleGroups[0], "Time", SampleUnit.Millisecond, false);
+        Assert.AreEqual(1, result.SampleGroups.Count);
+        Assert.Greater(result.SampleGroups[0].Samples[0], 0.0f);
+        AssertDefinition(result.SampleGroups[0], "Time", SampleUnit.Millisecond, increaseIsBetter: false);
     }
 
     [Test, Performance]
@@ -28,9 +28,9 @@ public class MeasureScope
         }
 
         var result = PerformanceTest.Active;
-        Assert.That(result.SampleGroups.Count, Is.EqualTo(1));
-        Assert.That(result.SampleGroups[0].Samples[0], Is.GreaterThan(0.0f));
-        AssertDefinition(result.SampleGroups[0], "TEST", SampleUnit.Millisecond, false);
+        Assert.AreEqual(1, result.SampleGroups.Count);
+        Assert.Greater(result.SampleGroups[0].Samples[0], 0.0f);
+        AssertDefinition(result.SampleGroups[0], "TEST", SampleUnit.Millisecond, increaseIsBetter: false);
     }
     
     [Test, Performance]
@@ -57,16 +57,29 @@ public class MeasureScope
         }
 
         var result = PerformanceTest.Active;
-        Assert.That(result.SampleGroups.Count, Is.EqualTo(1));
-        Assert.That(result.SampleGroups[0].Samples.Count, Is.EqualTo(4));
-        Assert.That(result.SampleGroups[0].Samples[0], Is.GreaterThan(0.0f));
-        AssertDefinition(result.SampleGroups[0], "TEST", SampleUnit.Millisecond, false);
+        Assert.AreEqual(1, result.SampleGroups.Count);
+        Assert.AreEqual(4, result.SampleGroups[0].Samples.Count);
+        Assert.Greater(result.SampleGroups[0].Samples[0], 0.0f);
+        AssertDefinition(result.SampleGroups[0], "TEST", SampleUnit.Millisecond, increaseIsBetter: false);
     }
-    
+
+    [Test, Performance]
+    public void MeasureScope_WithSampleGroup_ResultsIsInTheDefinedSampleUnit()
+    {
+        var sg = new SampleGroup("TEST", SampleUnit.Microsecond);
+        using (Measure.Scope(sg))
+        {
+        }
+
+        var result = PerformanceTest.Active;
+        Assert.AreEqual(1, result.SampleGroups.Count);
+        AssertDefinition(result.SampleGroups[0], sg.Name, sg.Unit, increaseIsBetter: false);
+    }
+
     private static void AssertDefinition(SampleGroup sampleGroup, string name, SampleUnit sampleUnit, bool increaseIsBetter)
     {
-        Assert.AreEqual(sampleGroup.Name, name);
-        Assert.AreEqual(sampleGroup.Unit, sampleUnit);
-        Assert.AreEqual(sampleGroup.IncreaseIsBetter, increaseIsBetter);
+        Assert.AreEqual(name, sampleGroup.Name);
+        Assert.AreEqual(sampleUnit, sampleGroup.Unit);
+        Assert.AreEqual(increaseIsBetter, sampleGroup.IncreaseIsBetter);
     }
 }

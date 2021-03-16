@@ -25,59 +25,9 @@ namespace Unity.PerformanceTesting.Runtime
             return offset.ToUnixTimeMilliseconds();
         }
 
-        public class RatioUnit
-        {
-            public SampleUnit Unit;
-            public double Ratio;
-        }
-        
-        internal static RatioUnit ShiftUnit(SampleGroup sg)
-        {
-            var ru = new RatioUnit {Unit = sg.Unit, Ratio = 1D};
-            if (sg.Unit == SampleUnit.Undefined) return ru;
-
-            while (true)
-            {
-                var sample = sg.Median * ru.Ratio;
-                if (sample > 10000)
-                {
-                    if (ru.Unit == SampleUnit.Second || ru.Unit == SampleUnit.Gigabyte)
-                        break;
-
-                    Shrink(ru);
-                    continue;
-                }
-
-                if (sample < 10)
-                {
-                    if (ru.Unit == SampleUnit.Nanosecond || ru.Unit == SampleUnit.Byte)
-                        break;
-
-                    Expand(ru);
-                    continue;
-                }
-
-                break;
-            }
-
-            return ru;
-        }
-
-        private static void Shrink(this RatioUnit ru)
-        {
-            ru.Ratio *= GetRatio(ru.Unit, ru.Unit + 1);
-            ru.Unit += 1;
-        }
-
-        private static void Expand(this RatioUnit ru)
-        {
-            ru.Ratio *= GetRatio(ru.Unit, ru.Unit - 1);
-            ru.Unit -= 1;
-
-        }
-
         public static double ConvertSample(SampleUnit from, SampleUnit to, double value)
         {
+            if (from.Equals(to)) return value;
             var ratio = GetRatio(from, to);
             return value * ratio;
         }
@@ -254,6 +204,17 @@ namespace Unity.PerformanceTesting.Runtime
             }
 
             return null;
+        }
+        internal static SampleGroup[] CreateSampleGroupsFromMarkerNames(params string[] profilerMarkerNames)
+        {
+            if (profilerMarkerNames == null) return null;
+            var sampleGroups = new List<SampleGroup>();
+            foreach (var marker in profilerMarkerNames)
+            {
+                sampleGroups.Add(new SampleGroup(marker, SampleUnit.Nanosecond, false));
+            }
+
+            return sampleGroups.ToArray();
         }
     }
 }

@@ -16,7 +16,7 @@ public class MetadataTests
         Assert.NotNull(run.Hardware);
         Assert.NotNull(run.TestSuite);
         Assert.NotNull(run.Date);
-        Assert.AreEqual(run.Results.Count, 0);
+        Assert.AreEqual(0, run.Results.Count);
     }
 
     [Test]
@@ -30,7 +30,7 @@ public class MetadataTests
         Assert.IsFalse(string.IsNullOrEmpty(run.Editor.Version));
         Assert.NotNull(run.Player);
         Assert.IsNull(run.Player.Platform);
-        Assert.AreEqual(run.Results.Count, 0);
+        Assert.AreEqual(0, run.Results.Count);
     }
 
     [Test]
@@ -47,7 +47,7 @@ public class MetadataTests
         Assert.NotNull(run.Hardware);
         Assert.NotNull(run.TestSuite);
         Assert.NotNull(run.Date);
-        Assert.AreEqual(run.Results.Count, 0);
+        Assert.AreEqual(0, run.Results.Count);
 
         builder.Cleanup();
     }

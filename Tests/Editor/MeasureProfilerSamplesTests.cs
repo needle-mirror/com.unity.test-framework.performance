@@ -18,7 +18,7 @@ public class MeasureProfilerSamplesTests
         }
 
         var result = PerformanceTest.Active;
-        Assert.AreEqual(result.SampleGroups.Count, 0);
+        Assert.AreEqual(0, result.SampleGroups.Count);
     }
 
     [Test, Performance]
@@ -30,8 +30,8 @@ public class MeasureProfilerSamplesTests
         }
         
         var result = PerformanceTest.Active;
-        Assert.AreEqual(result.SampleGroups.Count, 1);
-        Assert.AreEqual(result.SampleGroups[0].Samples.Count, 1);
+        Assert.AreEqual(1, result.SampleGroups.Count);
+        Assert.AreEqual(1, result.SampleGroups[0].Samples.Count);
         Assert.Greater(result.SampleGroups[0].Samples[0], 0);
     }
     
@@ -44,8 +44,8 @@ public class MeasureProfilerSamplesTests
         }
         
         var result = PerformanceTest.Active;
-        Assert.AreEqual(result.SampleGroups.Count, 1);
-        Assert.AreEqual(result.SampleGroups[0].Samples.Count, 1);
+        Assert.AreEqual(1, result.SampleGroups.Count);
+        Assert.AreEqual(1, result.SampleGroups[0].Samples.Count);
         Assert.Greater(result.SampleGroups[0].Samples[0], 0);
     }
 
@@ -59,8 +59,8 @@ public class MeasureProfilerSamplesTests
         }
 
         var result = PerformanceTest.Active;
-        Assert.AreEqual(result.SampleGroups.Count, 1);
-        Assert.AreEqual(result.SampleGroups[0].Samples.Count, 1);
+        Assert.AreEqual(1, result.SampleGroups.Count);
+        Assert.AreEqual(1, result.SampleGroups[0].Samples.Count);
         Assert.Greater(result.SampleGroups[0].Samples[0], 0);
     }
 
@@ -82,8 +82,8 @@ public class MeasureProfilerSamplesTests
         }
         
         var result = PerformanceTest.Active;
-        Assert.AreEqual(result.SampleGroups.Count, 1);
-        Assert.AreEqual(result.SampleGroups[0].Samples.Count, 4);
+        Assert.AreEqual(1, result.SampleGroups.Count);
+        Assert.AreEqual(4, result.SampleGroups[0].Samples.Count);
         Assert.Greater(result.SampleGroups[0].Samples[0], 0);
         Assert.Greater(result.SampleGroups[0].Samples[1], 0);
         Assert.Greater(result.SampleGroups[0].Samples[2], 0);
@@ -106,8 +106,8 @@ public class MeasureProfilerSamplesTests
         }
         
         var result = PerformanceTest.Active;
-        Assert.AreEqual(result.SampleGroups.Count, 1);
-        Assert.AreEqual(result.SampleGroups[0].Samples.Count, 4);
+        Assert.AreEqual(1, result.SampleGroups.Count);
+        Assert.AreEqual(4, result.SampleGroups[0].Samples.Count);
         Assert.Greater(result.SampleGroups[0].Samples[0], 0);
         Assert.Greater(result.SampleGroups[0].Samples[1], 0);
         Assert.Greater(result.SampleGroups[0].Samples[2], 0);

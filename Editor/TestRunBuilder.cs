@@ -76,16 +76,14 @@ namespace Unity.PerformanceTesting.Editor
 
         public void Cleanup()
         {
-            if (File.Exists(Utils.TestRunPath))
-            {
-                File.Delete(Utils.TestRunPath);
-                File.Delete(Utils.TestRunPath + ".meta");
-            }
+            if (File.Exists(Utils.TestRunPath)) { File.Delete(Utils.TestRunPath); }
+            const string metaPath = Utils.TestRunPath + ".meta";
+            if (File.Exists(metaPath)) {File.Delete(metaPath);}
 
             if (EditorPrefs.GetBool(cleanResources) && Directory.Exists("Assets/Resources"))
             {
                 Directory.Delete("Assets/Resources/", true);
-                File.Delete("Assets/Resources.meta");
+                if(File.Exists("Assets/Resources.meta")) {File.Delete("Assets/Resources.meta");}
             }
 
             AssetDatabase.Refresh();

@@ -18,7 +18,7 @@ public class TestSetupTeardown
     [Test, Performance]
     public void Test()
     {
-        Assert.AreEqual(s_Counter, 1);
+        Assert.AreEqual(1, s_Counter);
         s_Counter = 2;
     }
 
@@ -26,7 +26,7 @@ public class TestSetupTeardown
     public void Teardown()
     {
         Debug.Log("Teardown");
-        Assert.AreEqual(s_Counter, 2);
+        Assert.AreEqual(2, s_Counter);
     }
 }
 
@@ -44,7 +44,7 @@ public class UnityTestSetupTeardown
     [UnityTest, Performance]
     public IEnumerator Test()
     {
-        Assert.AreEqual(s_Counter, 1);
+        Assert.AreEqual(1, s_Counter);
         s_Counter = 2;
         yield return null;
     }
@@ -53,6 +53,6 @@ public class UnityTestSetupTeardown
     public void Teardown()
     {
         Debug.Log("Teardown");
-        Assert.AreEqual(s_Counter, 2);
+        Assert.AreEqual(2, s_Counter);
     }
 }

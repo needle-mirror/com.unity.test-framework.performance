@@ -62,7 +62,7 @@ public class MultipleDomainReloadTests
         for (var i = 0; i < 5; i++)
         {
             var sample = sampleGroup.Samples[i];
-            Assert.AreEqual(sample, i + 1, Mathf.Epsilon);
+            Assert.AreEqual(i + 1, sample, Mathf.Epsilon);
         }
     }
 }
