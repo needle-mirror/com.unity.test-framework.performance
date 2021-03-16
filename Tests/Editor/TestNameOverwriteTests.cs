@@ -52,7 +52,7 @@ public class TestNameOverwriteTests
         Assert.AreEqual("TestNameOverwriteTests.TestName_OverwriteMethodName(OverwriteTestMethodName)", PerformanceTest.Active.Name);
     }
     
-    [UnityTest, Performance]
+    [Test, Performance]
     [TestCase(1)]
     [TestCaseSource(nameof(integer))]
     public void TestName_TestCase_Default_UnityTest(int n)

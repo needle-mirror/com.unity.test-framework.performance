@@ -105,7 +105,7 @@ public class MeasureMethodTests
         Assert.AreEqual(100, s_CallCount);
     }
 
-    [Test, Performance]
+    [Test, Performance, Ignore("Unstable, can't guarantee no GC events")]
     public void MeasureMethod_With_GarbageCollectionMarker()
     {
         Measure.Method(() => { }).GC().Run();

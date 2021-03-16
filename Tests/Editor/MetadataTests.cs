@@ -1,6 +1,8 @@
+using System;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 using Unity.PerformanceTesting.Editor;
+using Unity.PerformanceTesting.Runtime;
 
 public class MetadataTests
 {
@@ -31,6 +33,24 @@ public class MetadataTests
         Assert.NotNull(run.Player);
         Assert.IsNull(run.Player.Platform);
         Assert.AreEqual(0, run.Results.Count);
+    }
+    
+    [Test]
+    public void TestRunBuilder_CreateBuildInfo()
+    {
+        var builder = new TestRunBuilder();
+        var date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).ToUniversalTime();
+
+        var run = builder.CreateBuildInfo();
+
+        Assert.Greater(run.Dependencies.Count, 0);
+        Assert.IsFalse(string.IsNullOrEmpty(run.Editor.Branch));
+        Assert.IsFalse(string.IsNullOrEmpty(run.Editor.Version));
+        Assert.NotNull(run.Player);
+        Assert.IsNull(run.Player.Platform);
+        Assert.NotNull(run.Date);
+        Assert.AreEqual(Utils.ConvertToUnixTimestamp(date), run.Date);
+        Assert.AreEqual(run.Results.Count, 0);
     }
 
     [Test]

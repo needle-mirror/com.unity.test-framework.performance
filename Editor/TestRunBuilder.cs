@@ -28,7 +28,7 @@ namespace Unity.PerformanceTesting.Editor
 
         public void OnPreprocessBuild(BuildReport report)
         {
-            var run = CreateRunInfo();
+            var run = CreateBuildInfo();
 
             CreateResourcesFolder();
             CreatePerformanceTestRunJson(run);
@@ -139,6 +139,16 @@ namespace Unity.PerformanceTesting.Editor
             run.Dependencies = GetPackageDependencies();
             SetBuildSettings(run);
             run.Date = Utils.ConvertToUnixTimestamp(DateTime.Now);
+
+            return run;
+        }
+        
+        public Run CreateBuildInfo()
+        {
+            var run = new Run();
+            run.Editor = GetEditorInfo();
+            run.Dependencies = GetPackageDependencies();
+            SetBuildSettings(run);
 
             return run;
         }

@@ -1,5 +1,8 @@
 # Changelog
 
+## [2.8.1] - 2021-03-16
+Removed setting up date when building player. It will set up at the beginning of the run.
+
 ## [2.8.0] - 2021-03-16
 
 Add overloads to measurements for overriding sample unit
