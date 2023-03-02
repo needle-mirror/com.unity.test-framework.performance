@@ -3,64 +3,67 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
-using UnityEditor;
 
-public class DomainReloadTests
+namespace Unity.PerformanceTesting.Tests.Editor
 {
-    const string k_SampleGroupName = "TEST_SAMPLEGROUP";
-
-    void MeasureSample(double sample)
+    class DomainReloadTests
     {
-        var sg = new SampleGroup(k_SampleGroupName, SampleUnit.Undefined);
-        Measure.Custom(sg, sample);
-    }
+        const string k_SampleGroupName = "TEST_SAMPLEGROUP";
 
-    public void AssertSample(double expected)
-    {
-        Assert.AreEqual(PerformanceTest.Active.SampleGroups.Count, 1);
-        var sampleGroup = PerformanceTest.Active.SampleGroups.First(s => s.Name == k_SampleGroupName);
-        var sample = sampleGroup.Samples.First();
-        Assert.AreEqual(expected, sample, Mathf.Epsilon);
-    }
+        void MeasureSample(double sample)
+        {
+            var sg = new SampleGroup(k_SampleGroupName, SampleUnit.Undefined);
+            Measure.Custom(sg, sample);
+        }
 
-    [UnityTest, Performance]
-    public IEnumerator Measure_Survives_EnterPlaymode()
-    {
-        MeasureSample(111D);
+        public void AssertSample(double expected)
+        {
+            Assert.AreEqual(PerformanceTest.Active.SampleGroups.Count, 1);
+            var sampleGroup = PerformanceTest.Active.SampleGroups.First(s => s.Name == k_SampleGroupName);
+            var sample = sampleGroup.Samples.First();
+            Assert.AreEqual(expected, sample, Mathf.Epsilon);
+        }
 
-        yield return new EnterPlayMode();
-        yield return new ExitPlayMode();
+        [UnityTest, Performance]
+        public IEnumerator Measure_Survives_EnterPlaymode()
+        {
+            MeasureSample(111D);
 
-        AssertSample(111D);
-    }
+            yield return new EnterPlayMode();
+            yield return new ExitPlayMode();
 
-    [UnityTest, Performance]
-    public IEnumerator Measure_Survives_ScriptCompliation()
-    {
-        MeasureSample(222D);
+            AssertSample(111D);
+        }
 
-        File.WriteAllText("Assets/test.cs", "class fake{}");
-        yield return new RecompileScripts(true);
-        AssetDatabase.DeleteAsset("Assets/test.cs");
+        [UnityTest, Performance]
+        public IEnumerator Measure_Survives_ScriptCompliation()
+        {
+            MeasureSample(222D);
 
-        AssertSample(222D);
-    }
+            File.WriteAllText("Assets/test.cs", "class fake{}");
+            yield return new RecompileScripts(true);
+            AssetDatabase.DeleteAsset("Assets/test.cs");
 
-    [UnityTest, Performance]
-    public IEnumerator Measure_Survives_DomainReloadWithoutCompilation()
-    {
-        MeasureSample(333D);
+            AssertSample(222D);
+        }
+
+        [UnityTest, Performance]
+        public IEnumerator Measure_Survives_DomainReloadWithoutCompilation()
+        {
+            MeasureSample(333D);
 
 #if UNITY_2019_3_OR_NEWER
-        EditorUtility.RequestScriptReload();
+            EditorUtility.RequestScriptReload();
 #else
             InternalEditorUtility.RequestScriptReload();
 #endif
-        yield return new RecompileScripts(false);
-        yield return null;
+            yield return new RecompileScripts(false);
+            yield return null;
 
-        AssertSample(333D);
+            AssertSample(333D);
+        }
     }
 }

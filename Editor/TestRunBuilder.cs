@@ -17,7 +17,7 @@ using UnityEditor.Build.Reporting;
 
 namespace Unity.PerformanceTesting.Editor
 {
-    public class TestRunBuilder : IPrebuildSetup, IPostBuildCleanup, IPreprocessBuildWithReport, IPostprocessBuildWithReport
+    internal class TestRunBuilder : IPrebuildSetup, IPostBuildCleanup, IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
         private const string cleanResources = "PT_ResourcesCleanup";
 
@@ -28,10 +28,13 @@ namespace Unity.PerformanceTesting.Editor
 
         public void OnPreprocessBuild(BuildReport report)
         {
-            var run = CreateBuildInfo();
-
             CreateResourcesFolder();
-            CreatePerformanceTestRunJson(run);
+
+            var run = CreateBuildInfo();
+            SaveToStorage(run, Utils.TestRunPath);
+
+            var settings = new RunSettings(Environment.GetCommandLineArgs());
+            SaveToStorage(settings, Utils.RunSettingsPath);
         }
         
         public void OnPostprocessBuild(BuildReport report)
@@ -41,9 +44,13 @@ namespace Unity.PerformanceTesting.Editor
 
         public void Setup()
         {
-            var run = CreateRunInfo();
             EditorPrefs.SetBool(cleanResources, false);
-            CreatePerformancePlayerPreferences(run);
+
+            var run = CreateRunInfo();
+            SaveToPrefs(run, Utils.PlayerPrefKeyRunJSON);
+
+            var settings = new RunSettings(Environment.GetCommandLineArgs());
+            SaveToPrefs(settings, Utils.PlayerPrefKeySettingsJSON);
         }
 
 #if !UNITY_2021_1_OR_NEWER
@@ -76,9 +83,8 @@ namespace Unity.PerformanceTesting.Editor
 
         public void Cleanup()
         {
-            if (File.Exists(Utils.TestRunPath)) { File.Delete(Utils.TestRunPath); }
-            const string metaPath = Utils.TestRunPath + ".meta";
-            if (File.Exists(metaPath)) {File.Delete(metaPath);}
+            DeleteFileAndMeta(Utils.TestRunPath);
+            DeleteFileAndMeta(Utils.RunSettingsPath);
 
             if (EditorPrefs.GetBool(cleanResources) && Directory.Exists("Assets/Resources"))
             {
@@ -88,6 +94,13 @@ namespace Unity.PerformanceTesting.Editor
 
             AssetDatabase.Refresh();
         }
+
+        private void DeleteFileAndMeta(string path)
+        {
+            if (File.Exists(path)) { File.Delete(path); }
+            var metaPath = path + ".meta";
+            if (File.Exists(metaPath)) { File.Delete(metaPath); }
+        } 
 
         private static Data.Editor GetEditorInfo()
         {
@@ -122,8 +135,13 @@ namespace Unity.PerformanceTesting.Editor
             if (run.Player == null) run.Player = new Player();
 
             run.Player.GpuSkinning = PlayerSettings.gpuSkinning;
+            #if UNITY_2021_2_OR_NEWER
+            run.Player.ScriptingBackend = PlayerSettings
+                .GetScriptingBackend(NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup)).ToString();
+            #else 
             run.Player.ScriptingBackend = PlayerSettings
                 .GetScriptingBackend(EditorUserBuildSettings.selectedBuildTargetGroup).ToString();
+            #endif
             run.Player.RenderThreadingMode = PlayerSettings.graphicsJobs ? "GraphicsJobs" :
                 PlayerSettings.MTRendering ? "MultiThreaded" : "SingleThreaded";
             run.Player.AndroidTargetSdkVersion = PlayerSettings.Android.targetSdkVersion.ToString();
@@ -142,7 +160,6 @@ namespace Unity.PerformanceTesting.Editor
 
             return run;
         }
-        
         public Run CreateBuildInfo()
         {
             var run = new Run();
@@ -174,17 +191,29 @@ namespace Unity.PerformanceTesting.Editor
             AssetDatabase.CreateFolder("Assets", "Resources");
         }
 
-        private void CreatePerformanceTestRunJson(Run run)
+        /// <summary>
+        /// Serializes given object to json and saves it in the provided path. 
+        /// </summary>
+        /// <param name="obj">Object to serialize.</param>
+        /// <param name="path">Path to save to.</param>
+        /// <returns></returns>
+        private string SaveToStorage(object obj, string path)
         {
-            var json = CreatePerformancePlayerPreferences(run);
-            File.WriteAllText(Utils.TestRunPath, json);
-            AssetDatabase.Refresh();
+            var json = JsonUtility.ToJson(obj);
+            File.WriteAllText(path, json);
+            return json;
         }
 
-        private string CreatePerformancePlayerPreferences(Run run)
+        /// <summary>
+        /// Serializes given object to json and saves it in player prefs using provided key. Requires Resources folder to exist.
+        /// </summary>
+        /// <param name="obj">Object to serialize.</param>
+        /// <param name="key">Unique key to use as player prefs key.</param>
+        /// <returns></returns>
+        private string SaveToPrefs(object obj, string key)
         {
-            var json = JsonUtility.ToJson(run, true);
-            PlayerPrefs.SetString(Utils.PlayerPrefKeyRunJSON, json);
+            var json = JsonUtility.ToJson(obj, true);
+            PlayerPrefs.SetString(key, json);
             return json;
         }
     }

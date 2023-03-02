@@ -9,7 +9,7 @@ using Unity.PerformanceTesting.Data;
 
 namespace Unity.PerformanceTesting.Editor
 {
-    class TestListTableItem : TreeViewItem
+    internal class TestListTableItem : TreeViewItem
     {
         public int index;
         public PerformanceTestResult performanceTest;
@@ -68,7 +68,7 @@ namespace Unity.PerformanceTesting.Editor
         }
     }
 
-    class TestListTable : TreeView
+    internal class TestListTable : TreeView
     {
         TestReportWindow m_testReportWindow;
 
@@ -414,7 +414,7 @@ namespace Unity.PerformanceTesting.Editor
         }
     }
 
-    static class MyExtensionMethods
+    internal static class MyExtensionMethods
     {
         public static IOrderedEnumerable<T> Order<T, TKey>(this IEnumerable<T> source, Func<T, TKey> selector,
             bool ascending)

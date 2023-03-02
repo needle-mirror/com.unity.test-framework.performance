@@ -4,6 +4,10 @@ Used to record profiler markers. Profiler marker timings are recorded automatica
 
 You can also create your own SampleGroups, specifying a custom name and the measurement units you want your results in, see [example 2](#example-2-measuring-profiler-markers-in-a-scope-with-custom-samplegroups). 
 
+## Limitations
+
+Currently not supported in editor tests when in edit mode.
+
 #### Example: Measuring profiler markers in a scope
 
 ``` csharp

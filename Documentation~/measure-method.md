@@ -3,6 +3,8 @@
 Executes the provided method, sampling performance using the following additional properties/methods to control how the measurements are taken:
 * **WarmupCount(int n)** - number of times to execute before measurements are collected. If unspecified, a default warmup is executed for 100 ms or until at least 3 method executions have completed, whichever is longer.
 * **MeasurementCount(int n)** - number of measurements to capture, defaults to 9 if not specified.
+* **DynamicMeasurementCount(OutlierMode outlierMode)** - dynamically find a suitable measurement count based on the margin of error of the samples. The measurements will stop once a certain amount of samples (specified by a confidence interval) falls within an acceptable error range from the result (defined by a relative error of the mean). A default margin of error range of 2% and a default confidence interval of 99% will be used. Statistical outliers will not be taken into account unless different behaviour is specified through the outlierMode argument.
+* **DynamicMeasurementCount(double maxRelativeError, ConfidenceLevel confidenceLevel, OutlierMode outlierMode)** - dynamically find a suitable measurement count based on the margin of error of the samples and using the provided confidence interval and error range.
 * **IterationsPerMeasurement(int n)** - number of method executions per measurement to use. If this value is not specified, the method is executed as many times as possible until approximately 100 ms has elapsed.
 * **SampleGroup(string name)** - name of the measurement, defaults to "Time" if unspecified.
 * **SampleGroup(SampleGroup sampleGroup)** - a sample group with a custom name and measurement unit. This will override the otherwise default value of "Time".

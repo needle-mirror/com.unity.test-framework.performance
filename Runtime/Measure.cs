@@ -8,8 +8,16 @@ using Object = UnityEngine.Object;
 
 namespace Unity.PerformanceTesting
 {
+    /// <summary>
+    /// Enables measuring of performance metrics during a performance test.
+    /// </summary>
     public static class Measure
     {
+        /// <summary>
+        /// Saves provided value as a performance measurement.
+        /// </summary>
+        /// <param name="sampleGroup">The sample group to save the value to.</param>
+        /// <param name="value">Value to be saved.</param>
         public static void Custom(SampleGroup sampleGroup, double value)
         {
             VerifyValue(sampleGroup.Name, value);
@@ -24,6 +32,11 @@ namespace Unity.PerformanceTesting
             activeSampleGroup.Samples.Add(value);
         }
 
+        /// <summary>
+        /// Saves provided value as a performance measurement.
+        /// </summary>
+        /// <param name="name">The name of the sample group to save the value to.</param>
+        /// <param name="value">Value to be saved.</param>
         public static void Custom(string name, double value)
         {
             VerifyValue(name, value);
@@ -45,107 +58,63 @@ namespace Unity.PerformanceTesting
                     $"Trying to record value which is not a number for sample group: {name}");
         }
 
+        /// <summary>
+        /// Measures execution time for the given scope as a single time.
+        /// </summary>
+        /// <param name="name">Name to use for the sample group.</param>
+        /// <returns>IDisposable <see cref="ScopeMeasurement"/> on which you should call the <see cref="ScopeMeasurement.Dispose"/> method to stop measurement.</returns>
         public static ScopeMeasurement Scope(string name = "Time")
         {
             return new ScopeMeasurement(name);
         }
         
+        /// <summary>
+        /// Measures execution time for the given scope as a single time.
+        /// </summary>
+        /// <param name="sampleGroup">Sample group to use to save samples to.</param>
+        /// <returns>IDisposable <see cref="ScopeMeasurement"/> on which you should call the <see cref="ScopeMeasurement.Dispose"/> method to stop measurement.</returns>
         public static ScopeMeasurement Scope(SampleGroup sampleGroup)
         {
             return new ScopeMeasurement(sampleGroup);
         }
 
+        /// <summary>
+        /// Measures profiler markers for the given scope.
+        /// </summary>
+        /// <param name="profilerMarkerLabels">List of profiler marker names.</param>
+        /// <returns></returns>
         public static ProfilerMeasurement ProfilerMarkers(params string[] profilerMarkerLabels)
         {
             return new ProfilerMeasurement(profilerMarkerLabels);
         }
         
+        /// <summary>
+        /// Measures profiler markers for the given scope.
+        /// </summary>
+        /// <param name="sampleGroups">List of SampleGroups where the name matches the profiler marker to measure.</param>
+        /// <returns></returns>
         public static ProfilerMeasurement ProfilerMarkers(params SampleGroup[] sampleGroups)
         {
             return new ProfilerMeasurement(sampleGroups);
         }
 
+        /// <summary>
+        /// Measures execution time for a method with given parameters.
+        /// </summary>
+        /// <param name="action"></param>
+        /// <returns><see cref="MethodMeasurement"/>using a builder pattern to provide parameters. Call <see cref="ScopeMeasurement.Run"/> to start measurement.</returns>
         public static MethodMeasurement Method(Action action)
         {
             return new MethodMeasurement(action);
         }
 
+        /// <summary>
+        /// Measures frame times with given parameters.
+        /// </summary>
+        /// <returns><see cref="FramesMeasurement"/> using a builder pattern to provide parameters. Call <see cref="FramesMeasurement.Run"/> method to start measurement.</returns>
         public static FramesMeasurement Frames()
         {
             return new FramesMeasurement();
-        }
-    }
-
-    public struct ScopeMeasurement : IDisposable
-    {
-        private readonly SampleGroup m_SampleGroup;
-        private readonly long m_StartTicks;
-
-        public ScopeMeasurement(SampleGroup sampleGroup)
-        {
-            m_SampleGroup = PerformanceTest.GetSampleGroup(sampleGroup.Name);
-            if (m_SampleGroup == null)
-            {
-                m_SampleGroup = sampleGroup;
-                PerformanceTest.Active.SampleGroups.Add(m_SampleGroup);
-            }
-
-            m_StartTicks = Stopwatch.GetTimestamp();
-            PerformanceTest.Disposables.Add(this);
-        }
-
-        public ScopeMeasurement(string name) : this(new SampleGroup(name))
-        {
-        }
-
-        public void Dispose()
-        {
-            var elapsedTicks = Stopwatch.GetTimestamp() - m_StartTicks;
-            PerformanceTest.Disposables.Remove(this);
-            var delta = TimeSpan.FromTicks(elapsedTicks).TotalMilliseconds;
-            
-            delta = Utils.ConvertSample(SampleUnit.Millisecond, m_SampleGroup.Unit, delta);
-
-            Measure.Custom(m_SampleGroup, delta);
-        }
-    }
-
-    public struct ProfilerMeasurement : IDisposable
-    {
-        private readonly ProfilerMarkerMeasurement m_Test;
-
-        public ProfilerMeasurement(SampleGroup[] sampleGroups)
-        {
-            if (sampleGroups == null)
-            {
-                m_Test = null;
-                return;
-            }
-
-            if (sampleGroups.Length == 0)
-            {
-                m_Test = null;
-                return;
-            }
-
-            var go = new GameObject("Recorder");
-            if (Application.isPlaying) Object.DontDestroyOnLoad(go);
-            go.hideFlags = HideFlags.HideAndDontSave;
-            m_Test = go.AddComponent<ProfilerMarkerMeasurement>();
-            m_Test.AddProfilerSampleGroup(sampleGroups);
-            PerformanceTest.Disposables.Add(this);
-        }
-
-        public ProfilerMeasurement(string[] profilerMarkers): this(Utils.CreateSampleGroupsFromMarkerNames(profilerMarkers))
-        {
-        }
-
-        public void Dispose()
-        {
-            PerformanceTest.Disposables.Remove(this);
-            if (m_Test == null) return;
-            m_Test.StopAndSampleRecorders();
-            Object.DestroyImmediate(m_Test.gameObject);
         }
     }
 }

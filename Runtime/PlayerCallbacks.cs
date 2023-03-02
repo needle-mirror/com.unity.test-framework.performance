@@ -2,6 +2,8 @@ using UnityEngine.TestRunner;
 using Unity.PerformanceTesting;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
+using Unity.PerformanceTesting.Data;
+using Unity.PerformanceTesting.Runtime;
 using UnityEngine.Scripting;
 using UnityEngine;
 
@@ -10,7 +12,7 @@ using UnityEngine;
 namespace Unity.PerformanceTesting
 {
     [Preserve]
-    public class PlayerCallbacks : ITestRunCallback
+    internal class PlayerCallbacks : ITestRunCallback
     {
         internal static bool saved;
 

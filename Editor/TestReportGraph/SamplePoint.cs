@@ -2,7 +2,7 @@
 
 namespace Unity.PerformanceTesting.Editor
 {
-    struct SamplePoint : IComparable<SamplePoint>
+    internal struct SamplePoint : IComparable<SamplePoint>
     {
         public double sample;
         public int index;

@@ -3,11 +3,16 @@
 Records time per frame by default and provides additional properties/methods to control how the measurements are taken:
 * **WarmupCount(int n)** - number of times to execute before measurements are collected. If unspecified, a default warmup is executed for 80 ms or until at least 3 full frames have rendered, whichever is longest.
 * **MeasurementCount(int n)** - number of frames to capture measurements for. If this value is not specified, as many frames as possible are captured until approximately 500 ms has elapsed.
+* **DynamicMeasurementCount(OutlierMode outlierMode)** - dynamically find a suitable measurement count based on the margin of error of the samples. The measurements will stop once a certain amount of samples (specified by a confidence interval) falls within an acceptable error range from the result (defined by a relative error of the mean). A default margin of error range of 2% and a default confidence interval of 99% will be used. Statistical outliers will not be taken into account unless different behaviour is specified through the outlierMode argument.
+* **DynamicMeasurementCount(double maxRelativeError, ConfidenceLevel confidenceLevel, OutlierMode outlierMode)** - dynamically find a suitable measurement count based on the margin of error of the samples and using the provided confidence interval and error range.
 * **DontRecordFrametime()** - disables frametime measurement.
 * **ProfilerMarkers(...)** - sample profile markers per frame. Does not work for deep profiling and `Profiler.BeginSample()`
 * **SampleGroup(string name)** - name of the measurement, defaults to "Time" if unspecified.
 * **Scope()** - measures frame times in a given coroutine scope. By default it uses a SampleGroup named "Time" with Milliseconds as measurement unit. You can also create your own SampleGroup, specifying a custom name and the measurement unit you want your results in, see [example 5](#example-5-specify-custom-samplegroup-in-the-scope).
 
+## Limitations
+
+Currently not supported in editor tests when in edit mode.
 
 #### Example 1: Simple frame time measurement using default values of at least 7 frames and default WarmupCount (see description above).
 

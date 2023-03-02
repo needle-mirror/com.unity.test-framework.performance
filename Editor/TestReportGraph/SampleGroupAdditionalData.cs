@@ -1,6 +1,6 @@
 ﻿namespace Unity.PerformanceTesting.Editor
 {
-    struct SampleGroupAdditionalData
+    internal struct SampleGroupAdditionalData
     {
         public float min;
         public float lowerQuartile;

@@ -3,122 +3,124 @@ using System.Threading;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 using UnityEditor.SceneManagement;
-using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.TestTools;
 
-public class MeasureProfilerSamplesTests
+namespace Unity.PerformanceTesting.Tests.Editor
 {
-    [Test, Performance]
-    public void MeasureProfilerSamples_WithNoSamples_DoesNotRecordSampleGroups()
+    class MeasureProfilerSamplesTests
     {
-        LogAssert.NoUnexpectedReceived();
-        using (Measure.ProfilerMarkers(new string[0]))
+        [Test, Performance]
+        public void MeasureProfilerSamples_WithNoSamples_DoesNotRecordSampleGroups()
         {
+            LogAssert.NoUnexpectedReceived();
+            using (Measure.ProfilerMarkers(new string[0]))
+            {
+            }
+
+            var result = PerformanceTest.Active;
+            Assert.AreEqual(0, result.SampleGroups.Count);
         }
 
-        var result = PerformanceTest.Active;
-        Assert.AreEqual(0, result.SampleGroups.Count);
-    }
-
-    [Test, Performance]
-    public void MeasureProfilerSamples_SingleFrame_RecordsSample()
-    {
-        using (Measure.ProfilerMarkers("TestMarker"))
+        [Test, Performance]
+        public void MeasureProfilerSamples_SingleFrame_RecordsSample()
         {
-            CreatePerformanceMarker("TestMarker", 1);
-        }
+            using (Measure.ProfilerMarkers("TestMarker"))
+            {
+                CreatePerformanceMarker("TestMarker", 1);
+            }
         
-        var result = PerformanceTest.Active;
-        Assert.AreEqual(1, result.SampleGroups.Count);
-        Assert.AreEqual(1, result.SampleGroups[0].Samples.Count);
-        Assert.Greater(result.SampleGroups[0].Samples[0], 0);
-    }
+            var result = PerformanceTest.Active;
+            Assert.AreEqual(1, result.SampleGroups.Count);
+            Assert.AreEqual(1, result.SampleGroups[0].Samples.Count);
+            Assert.Greater(result.SampleGroups[0].Samples[0], 0);
+        }
     
-    [Test, Performance]
-    public void MeasureProfilerSamples_strings_SingleFrame_RecordsSample()
-    {
-        using (Measure.ProfilerMarkers("TestMarker"))
+        [Test, Performance]
+        public void MeasureProfilerSamples_strings_SingleFrame_RecordsSample()
         {
-            CreatePerformanceMarker("TestMarker", 1);
-        }
+            using (Measure.ProfilerMarkers("TestMarker"))
+            {
+                CreatePerformanceMarker("TestMarker", 1);
+            }
         
-        var result = PerformanceTest.Active;
-        Assert.AreEqual(1, result.SampleGroups.Count);
-        Assert.AreEqual(1, result.SampleGroups[0].Samples.Count);
-        Assert.Greater(result.SampleGroups[0].Samples[0], 0);
-    }
-
-    [Test, Performance]
-    public void MeasureProfilerSamples_WhenNewScene_RecordsSample()
-    {
-        using (Measure.ProfilerMarkers("TestMarker"))
-        {
-            EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects);
-            CreatePerformanceMarker("TestMarker", 1);
+            var result = PerformanceTest.Active;
+            Assert.AreEqual(1, result.SampleGroups.Count);
+            Assert.AreEqual(1, result.SampleGroups[0].Samples.Count);
+            Assert.Greater(result.SampleGroups[0].Samples[0], 0);
         }
 
-        var result = PerformanceTest.Active;
-        Assert.AreEqual(1, result.SampleGroups.Count);
-        Assert.AreEqual(1, result.SampleGroups[0].Samples.Count);
-        Assert.Greater(result.SampleGroups[0].Samples[0], 0);
-    }
+        [Test, Performance]
+        public void MeasureProfilerSamples_WhenNewScene_RecordsSample()
+        {
+            using (Measure.ProfilerMarkers("TestMarker"))
+            {
+                EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects);
+                CreatePerformanceMarker("TestMarker", 1);
+            }
 
-    [UnityTest, Performance, Ignore("Not supported yet")]
-    public IEnumerator MeasureProfilerSamples_ManyFrames_RecordsSamples()
-    {
-        yield return null;
-        yield return null;
-        using (Measure.ProfilerMarkers("TestMarker"))
+            var result = PerformanceTest.Active;
+            Assert.AreEqual(1, result.SampleGroups.Count);
+            Assert.AreEqual(1, result.SampleGroups[0].Samples.Count);
+            Assert.Greater(result.SampleGroups[0].Samples[0], 0);
+        }
+
+        [UnityTest, Performance, Ignore("Not supported yet")]
+        public IEnumerator MeasureProfilerSamples_ManyFrames_RecordsSamples()
         {
             yield return null;
-            CreatePerformanceMarker("TestMarker", 1);
-            yield return null;            
-            CreatePerformanceMarker("TestMarker", 1);
-            yield return null;            
-            CreatePerformanceMarker("TestMarker", 1);
             yield return null;
-            CreatePerformanceMarker("TestMarker", 1);
-        }
+            using (Measure.ProfilerMarkers("TestMarker"))
+            {
+                yield return null;
+                CreatePerformanceMarker("TestMarker", 1);
+                yield return null;            
+                CreatePerformanceMarker("TestMarker", 1);
+                yield return null;            
+                CreatePerformanceMarker("TestMarker", 1);
+                yield return null;
+                CreatePerformanceMarker("TestMarker", 1);
+            }
         
-        var result = PerformanceTest.Active;
-        Assert.AreEqual(1, result.SampleGroups.Count);
-        Assert.AreEqual(4, result.SampleGroups[0].Samples.Count);
-        Assert.Greater(result.SampleGroups[0].Samples[0], 0);
-        Assert.Greater(result.SampleGroups[0].Samples[1], 0);
-        Assert.Greater(result.SampleGroups[0].Samples[2], 0);
-        Assert.Greater(result.SampleGroups[0].Samples[3], 0);
-    }
+            var result = PerformanceTest.Active;
+            Assert.AreEqual(1, result.SampleGroups.Count);
+            Assert.AreEqual(4, result.SampleGroups[0].Samples.Count);
+            Assert.Greater(result.SampleGroups[0].Samples[0], 0);
+            Assert.Greater(result.SampleGroups[0].Samples[1], 0);
+            Assert.Greater(result.SampleGroups[0].Samples[2], 0);
+            Assert.Greater(result.SampleGroups[0].Samples[3], 0);
+        }
     
-    [UnityTest, Performance, Ignore("Not supported")]
-    public IEnumerator MeasureProfilerSamples_string_ManyFrames_RecordsSamples()
-    {
-        using (Measure.ProfilerMarkers("TestMarker"))
+        [UnityTest, Performance, Ignore("Not supported")]
+        public IEnumerator MeasureProfilerSamples_string_ManyFrames_RecordsSamples()
         {
-            CreatePerformanceMarker("TestMarker", 1);
-            yield return null;            
-            CreatePerformanceMarker("TestMarker", 1);
-            yield return null;            
-            CreatePerformanceMarker("TestMarker", 1);
-            yield return null;
-            CreatePerformanceMarker("TestMarker", 1);
-            yield return null;
-        }
+            using (Measure.ProfilerMarkers("TestMarker"))
+            {
+                CreatePerformanceMarker("TestMarker", 1);
+                yield return null;            
+                CreatePerformanceMarker("TestMarker", 1);
+                yield return null;            
+                CreatePerformanceMarker("TestMarker", 1);
+                yield return null;
+                CreatePerformanceMarker("TestMarker", 1);
+                yield return null;
+            }
         
-        var result = PerformanceTest.Active;
-        Assert.AreEqual(1, result.SampleGroups.Count);
-        Assert.AreEqual(4, result.SampleGroups[0].Samples.Count);
-        Assert.Greater(result.SampleGroups[0].Samples[0], 0);
-        Assert.Greater(result.SampleGroups[0].Samples[1], 0);
-        Assert.Greater(result.SampleGroups[0].Samples[2], 0);
-        Assert.Greater(result.SampleGroups[0].Samples[3], 0);
-    }
+            var result = PerformanceTest.Active;
+            Assert.AreEqual(1, result.SampleGroups.Count);
+            Assert.AreEqual(4, result.SampleGroups[0].Samples.Count);
+            Assert.Greater(result.SampleGroups[0].Samples[0], 0);
+            Assert.Greater(result.SampleGroups[0].Samples[1], 0);
+            Assert.Greater(result.SampleGroups[0].Samples[2], 0);
+            Assert.Greater(result.SampleGroups[0].Samples[3], 0);
+        }
 
-    internal static void CreatePerformanceMarker(string name, int sleep)
-    {
-        var marker = CustomSampler.Create(name);
-        marker.Begin();
-        Thread.Sleep(sleep);
-        marker.End();
+        internal static void CreatePerformanceMarker(string name, int sleep)
+        {
+            var marker = CustomSampler.Create(name);
+            marker.Begin();
+            Thread.Sleep(sleep);
+            marker.End();
+        }
     }
 }

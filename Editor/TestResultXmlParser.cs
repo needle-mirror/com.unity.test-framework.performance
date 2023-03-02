@@ -9,8 +9,16 @@ using UnityEngine;
 
 namespace Unity.PerformanceTesting.Editor
 {
+    /// <summary>
+    /// Helper class to parse test runs into performance test runs.
+    /// </summary>
     public class TestResultXmlParser
     {
+        /// <summary>
+        /// Parses performance test run from test run result xml.
+        /// </summary>
+        /// <param name="resultXmlFileName">Path to test results xml file.</param>
+        /// <returns></returns>
         public Run GetPerformanceTestRunFromXml(string resultXmlFileName)
         {
             ValidateInput(resultXmlFileName);

@@ -6,28 +6,17 @@ using UnityEngine;
 using com.unity.test.metadatamanager;
 #endif
 
-
 namespace Unity.PerformanceTesting
 {
+    /// <summary>
+    /// Helper class to retrieve metadata information about player settings and hardware.
+    /// </summary>
     public class Metadata
     {
-        public static Run GetPerformanceTestRun()
-        {
-            try
-            {
-                var runResource = Resources.Load<TextAsset>(Utils.TestRunInfo.Replace(".json", ""));
-                var json = Application.isEditor ? PlayerPrefs.GetString(Utils.PlayerPrefKeyRunJSON) : runResource.text;
-                var run = JsonUtility.FromJson<Run>(json);
-                return run;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e);
-            }
-
-            return null;
-        }
-
+        /// <summary>
+        /// Gets hardware information.
+        /// </summary>
+        /// <returns>Hardware information.</returns>
         public static Hardware GetHardware()
         {
             return new Hardware
@@ -41,7 +30,11 @@ namespace Unity.PerformanceTesting
                 SystemMemorySizeMB = SystemInfo.systemMemorySize
             };
         }
-
+    
+        /// <summary>
+        /// Sets player settings.
+        /// </summary>
+        /// <param name="run">Run used to set settings.</param>
         public static void SetPlayerSettings(Run run)
         {
             run.Player.Vsync = QualitySettings.vSyncCount;
@@ -49,7 +42,11 @@ namespace Unity.PerformanceTesting
             run.Player.ColorSpace = QualitySettings.activeColorSpace.ToString();
             run.Player.AnisotropicFiltering = QualitySettings.anisotropicFiltering.ToString();
             run.Player.BlendWeights = QualitySettings.skinWeights.ToString();
+            #if UNITY_2022_2_OR_NEWER
+            run.Player.ScreenRefreshRate = (int)Math.Round(Screen.currentResolution.refreshRateRatio.value); // casting to int and rounding to ensure backwards compatibility with older package versions
+            #else
             run.Player.ScreenRefreshRate = Screen.currentResolution.refreshRate;
+            #endif
             run.Player.ScreenWidth = Screen.currentResolution.width;
             run.Player.ScreenHeight = Screen.currentResolution.height;
             run.Player.Fullscreen = Screen.fullScreen;
@@ -59,14 +56,22 @@ namespace Unity.PerformanceTesting
             run.Player.GraphicsApi = SystemInfo.graphicsDeviceType.ToString();
         }
 
+        /// <summary>
+        /// Loads run from resources.
+        /// </summary>
+        /// <returns></returns>
         public static Run GetFromResources()
         {
-            var run = GetPerformanceTestRun();
+            var run = ResourcesLoader.Load<Run>(Utils.TestRunInfo, Utils.PlayerPrefKeyRunJSON);
             SetRuntimeSettings(run);
 
             return run;
         }
 
+        /// <summary>
+        /// Sets runtime player settings on a run.
+        /// </summary>
+        /// <param name="run">Run used to set settings.</param>
         public static void SetRuntimeSettings(Run run)
         {
             run.Hardware = GetHardware();

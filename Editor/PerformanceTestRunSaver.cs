@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Unity.PerformanceTesting.Runtime;
 using UnityEditor;
 using UnityEngine;
 using UnityEditor.TestTools.TestRunner.Api;
@@ -8,7 +9,7 @@ using UnityEditor.TestTools.TestRunner.CommandLineTest;
 namespace Unity.PerformanceTesting.Editor
 {
     [InitializeOnLoad]
-    public class TestRunnerInitializer
+    internal class TestRunnerInitializer
     {
         static TestRunnerInitializer()
         {
@@ -19,7 +20,7 @@ namespace Unity.PerformanceTesting.Editor
     }
 
     [Serializable]
-    public class PerformanceTestRunSaver : ScriptableObject, ICallbacks
+    internal class PerformanceTestRunSaver : ScriptableObject, ICallbacks
     {
         void ICallbacks.RunStarted(ITestAdaptor testsToRun)
         {

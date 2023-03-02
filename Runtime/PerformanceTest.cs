@@ -12,21 +12,42 @@ using UnityEngine.TestRunner.NUnitExtensions;
 [assembly: InternalsVisibleTo("Unity.PerformanceTesting.Tests.Editor")]
 namespace Unity.PerformanceTesting
 {
+    /// <summary>
+    /// Represents active performance test as a singleton.
+    /// </summary>
     [Serializable]
     public class PerformanceTest
     {
+        /// <summary>
+        /// Full name of the test.
+        /// </summary>
         public string Name;
+        /// <summary>
+        /// Version of the test. Default "1".
+        /// </summary>
         public string Version;
+        /// <summary>
+        /// List of categories assigned to the test.
+        /// </summary>
         public List<string> Categories = new List<string>();
+        /// <summary>
+        /// List of sample groups assigned to the test.
+        /// </summary>
         public List<SampleGroup> SampleGroups = new List<SampleGroup>();
+        /// <summary>
+        /// Singleton instance of active performance test.
+        /// </summary>
         public static PerformanceTest Active { get; set; }
         internal static List<IDisposable> Disposables = new List<IDisposable>(1024);
         PerformanceTestHelper m_PerformanceTestHelper;
 
-        public delegate void Callback();
+        internal delegate void Callback();
 
-        public static Callback OnTestEnded;
+        internal static Callback OnTestEnded;
 
+        /// <summary>
+        /// Initializes a new performance test and assigns it as singleton.
+        /// </summary>
         public PerformanceTest()
         {
             Active = this;
@@ -104,6 +125,12 @@ namespace Unity.PerformanceTesting
             Disposables.Clear();
         }
 
+        /// <summary>
+        /// Retrieves named sample group from active performance test.
+        /// </summary>
+        /// <param name="name">Name of sample group to retrieve.</param>
+        /// <returns>Selected sample group.</returns>
+        /// <exception cref="PerformanceTestException">Exception will be thrown if there is no active performance test.</exception>
         public static SampleGroup GetSampleGroup(string name)
         {
             if (Active == null) throw new PerformanceTestException("Trying to record samples but there is no active performance tests.");
@@ -116,6 +143,10 @@ namespace Unity.PerformanceTesting
             return null;
         }
 
+        /// <summary>
+        /// Adds sample group to active performance test.
+        /// </summary>
+        /// <param name="sampleGroup">Sample group to be added.</param>
         public static void AddSampleGroup(SampleGroup sampleGroup)
         {
             Active.SampleGroups.Add(sampleGroup);
@@ -126,6 +157,9 @@ namespace Unity.PerformanceTesting
             return JsonUtility.ToJson(Active);
         }
 
+        /// <summary>
+        /// Loops through sample groups and updates statistical values.
+        /// </summary>
         public void CalculateStatisticalValues()
         {
             foreach (var sampleGroup in SampleGroups)
@@ -139,29 +173,73 @@ namespace Unity.PerformanceTesting
             TestContext.Out.WriteLine(ToString());
         }
 
+        static void AppendVisualization(StringBuilder sb, IList<double> data, int n, double min, double max)
+        {
+            const string bars = "▁▂▃▄▅▆▇█";
+            double range = max - min;
+            for (int i = 0; i < n; i++)
+            {
+                var sample = data[i];
+                int idx = Mathf.Clamp(Mathf.RoundToInt((float) ((sample - min) / range * (bars.Length - 1))), 0, bars.Length - 1);
+                sb.Append(bars[idx]);
+            }
+        }
+
+        private static double[] s_Buckets;
+        static void AppendSampleHistogram(StringBuilder sb, SampleGroup s, int buckets)
+        {
+            if (s_Buckets == null || s_Buckets.Length < buckets)
+                s_Buckets = new double[buckets];
+            double maxInOneBucket = 0;
+            double min = s.Min;
+            double bucketsOverRange = (buckets - 1) / (s.Max - s.Min);
+            for (int i = 0; i < s.Samples.Count; i++)
+            {
+                int bucket = Mathf.Clamp(Mathf.RoundToInt((float)((s.Samples[i] - min) * bucketsOverRange)), 0, buckets - 1);
+                s_Buckets[bucket] += 1;
+                if (s_Buckets[bucket] > maxInOneBucket)
+                    maxInOneBucket = s_Buckets[bucket];
+            }
+            AppendVisualization(sb, s_Buckets, s_Buckets.Length, 0, maxInOneBucket);
+        }
+        
+        /// <summary>
+        /// Returns performance test in a readable format.
+        /// </summary>
+        /// <returns>Readable representation of performance test.</returns>
         public override string ToString()
         {
             var logString = new StringBuilder();
 
-            foreach (var sampleGroup in SampleGroups)
+            foreach (var s in SampleGroups)
             {
-                logString.Append(sampleGroup.Name);
+                logString.Append(s.Name);
 
-                if (sampleGroup.Samples.Count == 1)
+                if (s.Samples.Count == 1)
                 {
-                    logString.AppendFormat(" {0:0.00} {1}", sampleGroup.Samples[0],  sampleGroup.Unit);
+                    logString.AppendLine($" {s.Samples[0]:0.00} {s.Unit}s");
                 }
                 else
                 {
-                    logString.AppendFormat(
-                        " {0} Median:{1:0.00} Min:{2:0.00} Max:{3:0.00} Avg:{4:0.00} Std:{5:0.00} SampleCount: {6} Sum: {7:0.00}",
-                        sampleGroup.Unit, sampleGroup.Median, sampleGroup.Min, sampleGroup.Max,
-                        sampleGroup.Average,
-                        sampleGroup.StandardDeviation, sampleGroup.Samples.Count, sampleGroup.Sum
-                    );
+                    string u = s.Unit.ShortName();
+                    logString.AppendLine($" in {s.Unit}s\nMin:\t\t{s.Min:0.00} {u}\nMedian:\t\t{s.Median:0.00} {u}\nMax:\t\t{s.Max:0.00} {u}\nAvg:\t\t{s.Average:0.00} {u}\nStdDev:\t\t{s.StandardDeviation:0.00} {u}\nSampleCount:\t{s.Samples.Count}\nSum:\t\t{s.Sum:0.00} {u}");
+                    logString.Append("First samples:\t");
+                    AppendVisualization(logString, s.Samples, Mathf.Min(s.Samples.Count, 100), s.Min, s.Max);
+                    logString.AppendLine();
+                    if (s.Samples.Count <= 512)
+                    {
+                        int numBuckets = Mathf.Min(10, s.Samples.Count / 4);
+                        if (numBuckets > 2)
+                        {
+                            logString.Append("Histogram:\t");
+                            AppendSampleHistogram(logString, s, numBuckets);
+                            logString.AppendLine();
+                        }
+                        else
+                            logString.Append("(not enough samples for histogram)\n");
+                    }
+                    logString.AppendLine();
                 }
-
-                logString.Append("\n");
             }
 
             return logString.ToString();

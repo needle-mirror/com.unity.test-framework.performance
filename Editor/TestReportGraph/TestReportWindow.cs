@@ -11,7 +11,7 @@ using Unity.PerformanceTesting.Runtime;
 
 namespace Unity.PerformanceTesting.Editor
 {
-    public class TestReportWindow : EditorWindow
+    internal class TestReportWindow : EditorWindow
     {
         static int s_windowWidth = 800;
         static int s_windowHeight = 600;
@@ -43,7 +43,7 @@ namespace Unity.PerformanceTesting.Editor
         private int[] m_columnWidth = new int[4];
 
         private bool m_isResizing;
-        private float m_testListHeight = s_windowHeight / 4;
+        private float m_testListHeight = (float)s_windowHeight / 4;
         private Rect m_splitterRect;
         private float m_windowHeight;
 
@@ -120,13 +120,10 @@ namespace Unity.PerformanceTesting.Editor
 
         public bool CheckAndSetupMaterial()
         {
-            if (m_material == null)
-                m_material = new Material(Shader.Find("Unlit/TestReportShader"));
-
-            if (m_material == null)
-                return false;
-
-            return true;
+            // Check if the material has already been created. If not, create a new material.
+            m_material ??= new Material(Shader.Find("Unlit/TestReportShader"));
+            // Check if the material is not null and return the result.
+            return !System.Object.Equals(m_material, null);
         }
 
         private string GetResultsPath()

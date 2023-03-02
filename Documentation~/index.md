@@ -9,25 +9,31 @@ The Performance Testing Extension is intended for use with the Unity Test Framew
 
 ## Installing the Performance Testing Extension
 
-To install the Performance Testing Extension package
+Install the Performance Testing Extension package using one of the following methods:
+* Add the package by [installing from a Git URL](https://docs.unity3d.com/Manual/upm-ui-giturl.html).
+* Add the package as a dependency to the [project manifest](https://docs.unity3d.com/Manual/upm-manifestPrj.html).
+
+Example:
 1. Open the `manifest.json` file for your Unity project (located in the YourProject/Packages directory) in a text editor.
-2. Add `"com.unity.test-framework.performance": "2.5.0",` to the dependencies.
+2. Add `"com.unity.test-framework.performance": "2.11.0-pre.1",` to the dependencies.
 3. Save the manifest.json file.
 4. Verify the Performance Testing Extension is now installed by opening the Unity Package Manager window.
 
-To access performance testing apis, add a reference to `Unity.PerformanceTesting` in your assembly definition.
+When the package is installed, add a reference to `Unity.PerformanceTesting` in your assembly definition to access the performance testing APIs.
 
-## Unity alpha version compatibility
+## Unity version compatibility
 
-Unity alpha releases can often include changes that break compatibility with the Performance Testing Extension, so we cannot currently guarantee compatability with every Unity alpha version. The table below shows which version of the package is compatible with which alpha releases.
+Unity releases can often include changes that break compatibility with the Performance Testing Extension, so we cannot currently guarantee latest package version compatability with every Unity version. The table below shows which version of the package is compatible with which Unity release streams.
 
-| Unity version             | Package version |
-| ------------------------- | --------------- |
-| 2019.2.0a10 - latest      | 1.2.3-preview+  |
-| 2019.2.0a1 - 2019.2.0a10  | 1.0.9-preview   |
-| 2019.1.0a10 - 2019.2.0a1  | 0.1.50-preview  |
-| 2019.1.0a01 - 2019.1.0a10 | 0.1.42-preview  |
-| Older versions            | 0.1.50-preview  |
+| Unity stream             | Package version |
+| ------------------------- | -------------- |
+| 2023.2                    | 3.0.0-pre.1    |
+| 2023.1                    | 3.0.0-pre.1    |
+| 2022.2                    | 3.0.0-pre.1    |
+| 2022.1                    | 3.0.0-pre.1    |
+| 2021.3                    | 3.0.0-pre.1    |
+| 2020.3                    | 3.0.0-pre.1    |
+| 2019.4                    | 2.8.1-preview  |
 
 ## Tips
 

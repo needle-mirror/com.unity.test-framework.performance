@@ -1,8 +1,8 @@
 {
   "name": "com.unity.test-framework.performance",
   "displayName": "Performance testing API",
-  "version": "2.8.1-preview",
-  "unity": "2019.3",
+  "version": "3.0.0-pre.1",
+  "unity": "2020.3",
   "unityRelease": "0a10",
   "description": "Extension to the Unity Test framework package. Adds performance testing capabilities and collects configuration metadata.",
   "keywords": [
@@ -10,18 +10,19 @@
     "test"
   ],
   "dependencies": {
-    "com.unity.test-framework": "1.1.0",
+    "com.unity.test-framework": "1.1.31",
     "com.unity.modules.jsonserialize": "1.0.0"
   },
   "_upm": {
-    "changelog": "Removed setting up date when building player. It will set up at the beginning of the run."
+    "changelog": "### Added\n- Merged 2.8.1 changes that weren't reflected in 2.10.0 release\n### Fixed\n- Fixing issues from SonarQube check\n- Updating obsolete API's that stopped working with recent Unity versions\n- Clarified how to add package in Unity project in documentation"
   },
   "upmCi": {
-    "footprint": "cc13522d5bb624865a48e0b9f8af06f0f1284faa"
+    "footprint": "2ca26768fb5d04e3ca266d3bddfafd87ea515e25"
   },
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.test-framework.performance@3.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.test-framework.performance.git",
     "type": "git",
-    "revision": "c2bbc1cd387e77b65fce8ac359fc8c607b25f80e"
+    "revision": "1e6cd56bc48f1022c8f6e5009ef77cbb3f9eb281"
   }
 }

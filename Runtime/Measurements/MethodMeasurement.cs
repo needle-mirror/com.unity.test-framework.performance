@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using Unity.PerformanceTesting.Data;
 using Unity.PerformanceTesting.Runtime;
 using Unity.PerformanceTesting.Exceptions;
 using Unity.PerformanceTesting.Meters;
+using Unity.PerformanceTesting.Statistics;
 using UnityEngine;
 using UnityEngine.Profiling;
 
 namespace Unity.PerformanceTesting.Measurements
 {
+    /// <summary>
+    /// Used as a helper class to sample execution time of methods. Uses fluent pattern to build and needs to be executed with Run method.
+    /// </summary>
     public class MethodMeasurement
     {
         internal const int k_MeasurementCount = 9;
@@ -15,6 +20,10 @@ namespace Unity.PerformanceTesting.Measurements
         private const int k_MinWarmupTimeMs = 100;
         private const int k_ProbingMultiplier = 4;
         private const int k_MaxIterations = 10000;
+        internal const int k_MaxDynamicMeasurements = 1000;
+        private const double k_DefaultMaxRelativeError = 0.02;
+        private const ConfidenceLevel k_DefaultConfidenceLevel = ConfidenceLevel.L99;
+        private const OutlierMode k_DefaultOutlierMode = OutlierMode.Remove;
         private readonly Action m_Action;
         private readonly List<SampleGroup> m_SampleGroups = new List<SampleGroup>();
         private readonly Recorder m_GCRecorder;
@@ -25,10 +34,18 @@ namespace Unity.PerformanceTesting.Measurements
         private SampleGroup m_SampleGroupGC = new SampleGroup("Time.GC()", SampleUnit.Undefined, false);
         private int m_WarmupCount;
         private int m_MeasurementCount;
+        internal bool m_DynamicMeasurementCount;
+        private double m_MaxRelativeError = k_DefaultMaxRelativeError;
+        private ConfidenceLevel m_ConfidenceLevel = k_DefaultConfidenceLevel;
+        private OutlierMode m_OutlierMode = k_DefaultOutlierMode;
         private int m_IterationCount = 1;
         private bool m_GC;
         private IStopWatch m_Watch;
 
+        /// <summary>
+        /// Initializes a method measurement.
+        /// </summary>
+        /// <param name="action">Method to be measured.</param>
         public MethodMeasurement(Action action)
         {
             m_Action = action;
@@ -44,6 +61,11 @@ namespace Unity.PerformanceTesting.Measurements
             return this;
         }
 
+        /// <summary>
+        /// Will record provided profiler markers once per frame.
+        /// </summary>
+        /// <param name="profilerMarkerNames">Profiler marker names as in profiler window.</param>
+        /// <returns></returns>
         public MethodMeasurement ProfilerMarkers(params string[] profilerMarkerNames)
         {
             if (profilerMarkerNames == null) return this;
@@ -57,7 +79,12 @@ namespace Unity.PerformanceTesting.Measurements
 
             return this;
         }
-        
+
+        /// <summary>
+        /// Will record provided profiler markers once per frame with additional control over the SampleUnit.
+        /// </summary>
+        /// <param name="sampleGroups">List of SampleGroups where a name matches the profiler marker and desired SampleUnit.</param>
+        /// <returns></returns>
         public MethodMeasurement ProfilerMarkers(params SampleGroup[] sampleGroups)
         {
             if (sampleGroups == null){ return this;}
@@ -71,6 +98,11 @@ namespace Unity.PerformanceTesting.Measurements
             return this;
         }
 
+        /// <summary>
+        /// Overrides the default SampleGroup of "Time".
+        /// </summary>
+        /// <param name="name">Desired name for measurement SampleGroup.</param>
+        /// <returns></returns>
         public MethodMeasurement SampleGroup(string name)
         {
             m_SampleGroup = new SampleGroup(name, SampleUnit.Millisecond, false);
@@ -78,6 +110,11 @@ namespace Unity.PerformanceTesting.Measurements
             return this;
         }
         
+        /// <summary>
+        /// Overrides the default SampleGroup.
+        /// </summary>
+        /// <param name="sampleGroup">SampleGroup with your desired name and unit.</param>
+        /// <returns></returns>
         public MethodMeasurement SampleGroup(SampleGroup sampleGroup)
         {
             m_SampleGroup = sampleGroup;
@@ -85,53 +122,154 @@ namespace Unity.PerformanceTesting.Measurements
             return this;
         }
 
+        /// <summary>
+        /// Count of times to execute before measurements are collected. If unspecified, a default warmup will be assigned.
+        /// </summary>
+        /// <param name="count">Count of warmup iterations to execute.</param>
+        /// <returns></returns>
         public MethodMeasurement WarmupCount(int count)
         {
             m_WarmupCount = count;
             return this;
         }
 
+        /// <summary>
+        /// Specifies the amount of method executions for a single measurement.
+        /// </summary>
+        /// <param name="count">Count of method executions.</param>
+        /// <returns></returns>
         public MethodMeasurement IterationsPerMeasurement(int count)
         {
             m_IterationCount = count;
             return this;
         }
 
+        /// <summary>
+        /// Specifies the number of measurements to take.
+        /// </summary>
+        /// <param name="count">Count of measurements to take.</param>
+        /// <returns></returns>
         public MethodMeasurement MeasurementCount(int count)
         {
             m_MeasurementCount = count;
             return this;
         }
 
+        /// <summary>
+        /// Dynamically find a suitable measurement count based on the margin of error of the samples.
+        /// The measurements will stop once a certain amount of samples (specified by a confidence interval)
+        /// falls within an acceptable error range from the result (defined by a relative error of the mean).
+        /// A default margin of error range of 2% and a default confidence interval of 99% will be used.
+        /// </summary>
+        /// <param name="outlierMode">Outlier mode allows to include or exclude outliers when evaluating the stop criterion.</param>
+        /// <returns></returns>
+        public MethodMeasurement DynamicMeasurementCount(OutlierMode outlierMode = k_DefaultOutlierMode)
+        {
+            m_DynamicMeasurementCount = true;
+            m_OutlierMode = outlierMode;
+            return this;
+        }
+
+        /// <summary>
+        /// Dynamically find a suitable measurement count based on the margin of error of the samples.
+        /// The measurements will stop once a certain amount of samples (specified by a confidence interval)
+        /// falls within an acceptable error range from the result (defined by a relative error of the mean).
+        /// </summary>
+        /// <param name="maxRelativeError">The maximum relative error of the mean that the margin of error must fall into.</param>
+        /// <param name="confidenceLevel">The confidence interval which will be used to calculate the margin of error.</param>
+        /// <param name="outlierMode">Outlier mode allows to include or exclude outliers when evaluating the stop criterion.</param>
+        /// <returns></returns>
+        public MethodMeasurement DynamicMeasurementCount(double maxRelativeError, ConfidenceLevel confidenceLevel = k_DefaultConfidenceLevel,
+            OutlierMode outlierMode = k_DefaultOutlierMode)
+        {
+            m_MaxRelativeError = maxRelativeError;
+            m_ConfidenceLevel = confidenceLevel;
+            m_DynamicMeasurementCount = true;
+            m_OutlierMode = outlierMode;
+            return this;
+        }
+
+        /// <summary>
+        /// Used to provide a cleanup method which will not be measured.
+        /// </summary>
+        /// <param name="action">Cleanup method to execute.</param>
+        /// <returns></returns>
         public MethodMeasurement CleanUp(Action action)
         {
             m_Cleanup = action;
             return this;
         }
 
+        /// <summary>
+        /// Used to provide a setup method which will run before the measurement.
+        /// </summary>
+        /// <param name="action">Setup method to execute.</param>
+        /// <returns></returns>
         public MethodMeasurement SetUp(Action action)
         {
             m_Setup = action;
             return this;
         }
 
+        /// <summary>
+        /// Enables recording of garbage collector calls.
+        /// </summary>
+        /// <returns></returns>
         public MethodMeasurement GC()
         {
             m_GC = true;
             return this;
         }
 
+        /// <summary>
+        /// Executes the measurement with given parameters. When MeasurementCount is not provided, a probing method will run to determine desired measurement counts.
+        /// </summary>
         public void Run()
         {
-            if (m_MeasurementCount > 0)
+            ValidateCorrectDynamicMeasurementCountUsage();
+            SettingsOverride();
+            var settingsCount = RunSettings.Instance.MeasurementCount;
+            
+            if (m_MeasurementCount > 0 || settingsCount > -1)
             {
                 Warmup(m_WarmupCount);
                 RunForIterations(m_IterationCount, m_MeasurementCount, useAverage: false);
                 return;
             }
 
+            if (m_DynamicMeasurementCount)
+            {
+                Warmup(m_WarmupCount);
+                RunForIterations(m_IterationCount);
+                return;
+            }
+
             var iterations = Probing();
             RunForIterations(iterations, k_MeasurementCount, useAverage: true);
+        }
+
+        private void ValidateCorrectDynamicMeasurementCountUsage()
+        {
+            if (!m_DynamicMeasurementCount)
+                return;
+
+            if (m_MeasurementCount > 0)
+            {
+                m_DynamicMeasurementCount = false;
+                Debug.LogWarning("DynamicMeasurementCount will be ignored because MeasurementCount was specified.");
+            }
+        }
+        
+        /// <summary>
+        /// Overrides measurement count based on performance run settings
+        /// </summary>
+        private void SettingsOverride()
+        {
+            var count = RunSettings.Instance.MeasurementCount;
+            if (count < 0) { return; }
+            m_MeasurementCount = count;
+            m_WarmupCount = m_WarmupCount > 0 ? count : 0;
+            m_DynamicMeasurementCount = false;
         }
 
         private void RunForIterations(int iterations, int measurements, bool useAverage)
@@ -143,6 +281,23 @@ namespace Unity.PerformanceTesting.Measurements
                 if (useAverage) executionTime /= iterations;
                 var delta = Utils.ConvertSample(SampleUnit.Millisecond, m_SampleGroup.Unit, executionTime);
                 Measure.Custom(m_SampleGroup, delta);
+            }
+
+            DisableAndMeasureMarkers();
+        }
+
+        private void RunForIterations(int iterations)
+        {
+            EnableMarkers();
+
+            while(true)
+            {
+                var executionTime = iterations == 1 ? ExecuteSingleIteration() : ExecuteForIterations(iterations);
+                var delta = Utils.ConvertSample(SampleUnit.Millisecond, m_SampleGroup.Unit, executionTime);
+                Measure.Custom(m_SampleGroup, delta);
+
+                if (SampleCountFulfillsRequirements())
+                    break;
             }
 
             DisableAndMeasureMarkers();
@@ -167,6 +322,23 @@ namespace Unity.PerformanceTesting.Measurements
                 var delta = Utils.ConvertSample(SampleUnit.Nanosecond, sampleGroup.Unit, sample);
                 Measure.Custom(sampleGroup, delta / blockCount);
             }
+        }
+
+        private bool SampleCountFulfillsRequirements()
+        {
+            var samples = m_SampleGroup.Samples;
+            var sampleCount = samples.Count;
+            var statistics = MeasurementsStatistics.Calculate(samples, m_OutlierMode, m_ConfidenceLevel);
+            var actualError = statistics.MarginOfError;
+            var maxError = m_MaxRelativeError * statistics.Mean;
+
+            if (sampleCount >= k_MeasurementCount && actualError < maxError)
+                return true;
+
+            if (sampleCount >= k_MaxDynamicMeasurements)
+                return true;
+
+            return false;
         }
 
         private int Probing()

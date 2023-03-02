@@ -6,12 +6,15 @@ using UnityEngine;
 
 namespace Unity.PerformanceTesting.Runtime
 {
-    public static class Utils
+    internal static class Utils
     {
         public static string ResourcesPath => Path.Combine(Application.dataPath, "Resources");
         public const string TestRunPath = "Assets/Resources/" + TestRunInfo;
         public const string TestRunInfo = "PerformanceTestRunInfo.json";
         public const string PlayerPrefKeyRunJSON = "PT_Run";
+        public const string RunSettingsPath = "Assets/Resources/" + RunSettings;
+        public const string RunSettings = "PerformanceTestRunSettings.json";
+        public const string PlayerPrefKeySettingsJSON = "PT_Settings";
 
         public static DateTime ConvertFromUnixTimestamp(long timestamp)
         {
@@ -192,9 +195,8 @@ namespace Unity.PerformanceTesting.Runtime
             return path;
         }
 
-        public static string GetArg(string name)
+        public static string GetArg(string[] args, string name)
         {
-            var args = Environment.GetCommandLineArgs();
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == name && args.Length > i + 1)
@@ -205,6 +207,13 @@ namespace Unity.PerformanceTesting.Runtime
 
             return null;
         }
+        
+        internal static int ToInt(this string s)
+        {
+            if (int.TryParse(s, out var i)) return i;
+            return -1;
+        }
+        
         internal static SampleGroup[] CreateSampleGroupsFromMarkerNames(params string[] profilerMarkerNames)
         {
             if (profilerMarkerNames == null) return null;
