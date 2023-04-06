@@ -33,7 +33,7 @@ namespace Unity.PerformanceTesting.Editor
         private bool m_NewerFileExists = false;
         private double m_LastFileCheckTime = 0f;
         private float m_FileCheckFrequencySeconds = 3f;
-        private bool m_AutoRefresh = false;
+        private bool m_AutoRefresh;
 
         private List<string> m_sampleGroups = new List<string>();
 
@@ -109,7 +109,7 @@ namespace Unity.PerformanceTesting.Editor
             }
         }
 
-        [MenuItem("Window/Analysis/Performance Test Report")]
+        [MenuItem("Window/General/Performance Test Report", false, priority = 202)]
         private static void Init()
         {
             var window = GetWindow<TestReportWindow>("Test Report");
@@ -118,12 +118,11 @@ namespace Unity.PerformanceTesting.Editor
             window.Show();
         }
 
-        public bool CheckAndSetupMaterial()
+        public void SetupMaterial()
         {
-            // Check if the material has already been created. If not, create a new material.
-            m_material ??= new Material(Shader.Find("Unlit/TestReportShader"));
-            // Check if the material is not null and return the result.
-            return !System.Object.Equals(m_material, null);
+            // Create a new material
+            m_material = new Material(Shader.Find("Unlit/TestReportShader"));
+            m_material.SetPass(0);
         }
 
         private string GetResultsPath()
@@ -207,7 +206,7 @@ namespace Unity.PerformanceTesting.Editor
 
         private void OnEnable()
         {
-            CheckAndSetupMaterial();
+            SetupMaterial();
 
             LoadData();
         }
@@ -363,137 +362,153 @@ namespace Unity.PerformanceTesting.Editor
                 }
             }
         }
+        
+        private void ClearResults()
+        {
+            File.Delete(GetResultsPath());
+            m_resultsData = null;
+            GUILayout.Label(string.Empty);
+        }
 
         private void Draw()
         {
-            GUIStyle selectedStyle = new GUIStyle(GUI.skin.label);
-            selectedStyle.fontStyle = FontStyle.Bold;
+            var isResultsCountPositive = m_resultsData?.Results.Count > 0;
 
             GUILayout.BeginHorizontal();
+            m_AutoRefresh = EditorPrefs.GetBool("ToggleState", false);
             m_AutoRefresh = GUILayout.Toggle(m_AutoRefresh, "Auto Refresh");
             if (GUILayout.Button("Refresh", GUILayout.Width(100)))
                 Refresh();
-            GUILayout.Label(string.Format("Last results {0}", m_lastResultsDateTime));
+            EditorPrefs.SetBool("ToggleState", m_AutoRefresh);
+
             if (m_NewerFileExists)
             {
                 if (m_AutoRefresh)
                     Refresh();
                 else
-                    GUILayout.Label(" - New data available");
+                    GUILayout.Label("New data available");
             }
+
             GUILayout.FlexibleSpace();
-            if (m_resultsData != null && m_resultsData.Results.Count > 0)
-            {
-                if (GUILayout.Button("Export", GUILayout.Width(100)))
+
+            if (isResultsCountPositive) GUILayout.Label($"Last results {m_lastResultsDateTime}");
+            GUI.enabled = isResultsCountPositive;
+            if (GUILayout.Button("Clear Results", GUILayout.Width(100)) && EditorUtility.DisplayDialog(
+                    "Clear Results", "Are you sure you want to clear all Performance test results?", "Clear", "Cancel"))
+                    ClearResults();
+            if (GUILayout.Button("Export", GUILayout.Width(100)))
                     Export();
-            }
+            GUI.enabled = true;
+
             GUILayout.EndHorizontal();
 
-            if (m_resultsData == null)
-                return;
-
-            if (m_resultsData.Results.Count <= 0)
-                GUILayout.Label("No performance test data found.");
-            else
+            if (m_resultsData == null || !isResultsCountPositive)
             {
-                m_showTests = BoldFoldout(m_showTests, "Test View");
-                if (m_showTests)
+                GUILayout.Label(m_NewerFileExists ? string.Empty : "No performance test data found");
+                return;
+            }
+
+            m_showTests = BoldFoldout(m_showTests, "Test View");
+            if (m_showTests)
+            {
+                if (m_testListTable != null)
                 {
-                    if (m_testListTable != null)
+                    Rect r = GUILayoutUtility.GetRect(position.width, m_testListHeight, GUI.skin.box,
+                        GUILayout.ExpandWidth(true));
+                    m_testListTable.OnGUI(r);
+                    Resize(r.y);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(m_selectedTest))
+            {
+                var profileDataFile = Path.Combine(Application.persistentDataPath,
+                    Utils.RemoveIllegalCharacters(m_selectedTest) + ".raw");
+                if (File.Exists(profileDataFile))
+                {
+                    if (GUILayout.Button(string.Format("Load profiler data for test: {0}", m_selectedTest)))
                     {
-                        Rect r = GUILayoutUtility.GetRect(position.width, m_testListHeight, GUI.skin.box,
-                            GUILayout.ExpandWidth(true));
-                        m_testListTable.OnGUI(r);
-                        Resize(r.y);
+                        ProfilerDriver.LoadProfile(profileDataFile, false);
+                    }
+                }
+            }
+
+            m_showSamples = BoldFoldout(m_showSamples, "Sample Group View");
+            if (m_showSamples)
+            {
+                SetColumnSizes(50, 50, 50, 50);
+
+                EditorGUILayout.BeginVertical();
+                m_sampleGroupScroll =
+                    EditorGUILayout.BeginScrollView(m_sampleGroupScroll, false,
+                        true); //, false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUI.skin.window);
+                int dataIndex = 0;
+                foreach (var result in m_resultsData.Results)
+                {
+                    if (result.Name != m_selectedTest)
+                    {
+                        dataIndex += result.SampleGroups.Count;
+                        continue;
+                    }
+
+                    foreach (var sampleGroup in result.SampleGroups)
+                    {
+                        var data = m_sampleGroupAdditionalData[dataIndex];
+                        dataIndex++;
+                        var samplesToDraw = sampleGroup.Samples;
+                        float min = data.min;
+                        float lowerQuartile = data.lowerQuartile;
+                        float median = data.median;
+                        float upperQuartile = data.upperQuartile;
+                        float max = data.max;
+
+                        float graphMin = min > 0.0f ? 0.0f : min;
+
+                        EditorGUILayout.BeginVertical(GUI.skin.box,
+                            GUILayout.Width(position.width - GUI.skin.verticalScrollbar.fixedWidth -
+                                            (GUI.skin.box.padding.horizontal + GUI.skin.box.margin.horizontal)),
+                            GUILayout.ExpandHeight(false));
+                        EditorGUILayout.LabelField(sampleGroup.Name, m_boldStyle);
+                        EditorGUILayout.LabelField("Sample Unit: " + sampleGroup.Unit.ToString());
+                        if (samplesToDraw.Count > m_chartLimit)
+                        {
+                            string message =
+                                string.Format(
+                                    "Sample Group has more than {0} Samples. The first {0} Samples will be displayed. However, calculations are done according to the all samples received from the test run.",
+                                    m_chartLimit);
+                            EditorGUILayout.HelpBox(message, MessageType.Warning, true);
+                            samplesToDraw = samplesToDraw.Take(m_chartLimit).ToList();
+                        }
+
+                        EditorGUILayout.BeginHorizontal(GUILayout.Height(100), GUILayout.ExpandHeight(false));
+
+                        EditorGUILayout.BeginVertical(GUILayout.Width(100), GUILayout.ExpandHeight(true));
+                        Draw2Column("Max", max);
+                        GUILayout.FlexibleSpace();
+                        Color oldColor = GUI.contentColor;
+                        if (median < 0.01f)
+                            GUI.contentColor = m_colorWarningText;
+                        else
+                            GUI.contentColor = m_colorMedianText;
+                        Draw2Column("Median", median);
+                        GUI.contentColor = oldColor;
+
+                        //Draw2Column("SD", (float)sampleGroup.StandardDeviation);
+                        //Draw2Column("P", (float)sampleGroup.PercentileValue);
+                        GUILayout.FlexibleSpace();
+                        Draw2Column("Min", min);
+                        EditorGUILayout.EndVertical();
+                        DrawBarGraph(position.width - 200, 100, samplesToDraw, graphMin, max, median);
+                        DrawBoxAndWhiskerPlot(50, 100, min, lowerQuartile, median, upperQuartile, max, min, max,
+                            (float)sampleGroup.StandardDeviation, m_colorWhite, m_colorBoxAndWhiskerBackground);
+                        EditorGUILayout.EndHorizontal();
+
+                        EditorGUILayout.EndVertical();
                     }
                 }
 
-                if (!string.IsNullOrEmpty(m_selectedTest))
-                {
-                    var profileDataFile = Path.Combine(Application.persistentDataPath,
-                        Utils.RemoveIllegalCharacters(m_selectedTest) + ".raw");
-                    if (File.Exists(profileDataFile))
-                    {
-                        if (GUILayout.Button(string.Format("Load profiler data for test: {0}", m_selectedTest)))
-                        {
-                            ProfilerDriver.LoadProfile(profileDataFile, false);
-                        }
-                    }
-                }
-
-                m_showSamples = BoldFoldout(m_showSamples, "Sample Group View");
-                if (m_showSamples)
-                {
-                    SetColumnSizes(50, 50, 50, 50);
-
-                    EditorGUILayout.BeginVertical();
-                    m_sampleGroupScroll =
-                        EditorGUILayout.BeginScrollView(m_sampleGroupScroll, false,
-                            true); //, false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUI.skin.window);
-                    int dataIndex = 0;
-                    foreach (var result in m_resultsData.Results)
-                    {
-                        if (result.Name != m_selectedTest)
-                        {
-                            dataIndex += result.SampleGroups.Count;
-                            continue;
-                        }
-
-                        foreach (var sampleGroup in result.SampleGroups)
-                        {
-                            var data = m_sampleGroupAdditionalData[dataIndex];
-                            dataIndex++;
-                            var samplesToDraw = sampleGroup.Samples;
-                            float min = data.min;
-                            float lowerQuartile = data.lowerQuartile;
-                            float median = data.median;
-                            float upperQuartile = data.upperQuartile;
-                            float max = data.max;
-
-                            float graphMin = min > 0.0f ? 0.0f : min;
-
-                            EditorGUILayout.BeginVertical(GUI.skin.box,
-                                GUILayout.Width(position.width - GUI.skin.verticalScrollbar.fixedWidth -
-                                    (GUI.skin.box.padding.horizontal + GUI.skin.box.margin.horizontal)),
-                                GUILayout.ExpandHeight(false));
-                            EditorGUILayout.LabelField(sampleGroup.Name, m_boldStyle);
-                            EditorGUILayout.LabelField("Sample Unit: " + sampleGroup.Unit.ToString());
-                            if (samplesToDraw.Count > m_chartLimit)
-                            {
-                                string message = string.Format("Sample Group has more than {0} Samples. The first {0} Samples will be displayed. However, calculations are done according to the all samples received from the test run.", m_chartLimit);
-                                EditorGUILayout.HelpBox(message, MessageType.Warning, true);
-                                samplesToDraw = samplesToDraw.Take(m_chartLimit).ToList();
-                            }
-                            EditorGUILayout.BeginHorizontal(GUILayout.Height(100), GUILayout.ExpandHeight(false));
-
-                            EditorGUILayout.BeginVertical(GUILayout.Width(100), GUILayout.ExpandHeight(true));
-                            Draw2Column("Max", max);
-                            GUILayout.FlexibleSpace();
-                            Color oldColor = GUI.contentColor;
-                            if (median < 0.01f)
-                                GUI.contentColor = m_colorWarningText;
-                            else
-                                GUI.contentColor = m_colorMedianText;
-                            Draw2Column("Median", median);
-                            GUI.contentColor = oldColor;
-
-                            //Draw2Column("SD", (float)sampleGroup.StandardDeviation);
-                            //Draw2Column("P", (float)sampleGroup.PercentileValue);
-                            GUILayout.FlexibleSpace();
-                            Draw2Column("Min", min);
-                            EditorGUILayout.EndVertical();
-                            DrawBarGraph(position.width - 200, 100, samplesToDraw, graphMin, max, median);
-                            DrawBoxAndWhiskerPlot(50, 100, min, lowerQuartile, median, upperQuartile, max, min, max,
-                                (float)sampleGroup.StandardDeviation, m_colorWhite, m_colorBoxAndWhiskerBackground);
-                            EditorGUILayout.EndHorizontal();
-
-                            EditorGUILayout.EndVertical();
-                        }
-                    }
-
-                    EditorGUILayout.EndScrollView();
-                    EditorGUILayout.EndVertical();
-                }
+                EditorGUILayout.EndScrollView();
+                EditorGUILayout.EndVertical();
             }
         }
 
@@ -593,12 +608,8 @@ namespace Unity.PerformanceTesting.Editor
             if (Event.current.type != EventType.Repaint)
                 return false;
 
-            if (!CheckAndSetupMaterial())
-                return false;
-
             GL.PushMatrix();
-            CheckAndSetupMaterial();
-            m_material.SetPass(0);
+            SetupMaterial();
 
             Matrix4x4 matrix = new Matrix4x4();
             matrix.SetTRS(new Vector3(r.x, r.y, 0), Quaternion.identity, Vector3.one);

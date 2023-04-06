@@ -15,7 +15,7 @@ Install the Performance Testing Extension package using one of the following met
 
 Example:
 1. Open the `manifest.json` file for your Unity project (located in the YourProject/Packages directory) in a text editor.
-2. Add `"com.unity.test-framework.performance": "2.11.0-pre.1",` to the dependencies.
+2. Add `"com.unity.test-framework.performance": "3.0.0-pre.2",` to the dependencies.
 3. Save the manifest.json file.
 4. Verify the Performance Testing Extension is now installed by opening the Unity Package Manager window.
 
@@ -23,17 +23,17 @@ When the package is installed, add a reference to `Unity.PerformanceTesting` in 
 
 ## Unity version compatibility
 
-Unity releases can often include changes that break compatibility with the Performance Testing Extension, so we cannot currently guarantee latest package version compatability with every Unity version. The table below shows which version of the package is compatible with which Unity release streams.
+Unity releases can often include changes that break compatibility with the Performance Testing Extension, so we cannot currently guarantee latest package version compatability with every Unity version. The table below shows which version of the package is compatible with which Unity release streams. 
 
 | Unity stream             | Package version |
-| ------------------------- | -------------- |
-| 2023.2                    | 3.0.0-pre.1    |
-| 2023.1                    | 3.0.0-pre.1    |
-| 2022.2                    | 3.0.0-pre.1    |
-| 2022.1                    | 3.0.0-pre.1    |
-| 2021.3                    | 3.0.0-pre.1    |
-| 2020.3                    | 3.0.0-pre.1    |
-| 2019.4                    | 2.8.1-preview  |
+| ------------------------- |-----------------|
+| 2023.2                    | 3.0.0-pre.2     |
+| 2023.1                    | 3.0.0-pre.2     |
+| 2022.2                    | 3.0.0-pre.2     |
+| 2022.1                    | 3.0.0-pre.2     |
+| 2021.3                    | 3.0.0-pre.2     |
+| 2020.3                    | 3.0.0-pre.2     |
+| 2019.4                    | 2.8.1-preview   |
 
 ## Tips
 

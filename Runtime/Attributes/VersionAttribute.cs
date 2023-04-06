@@ -14,7 +14,7 @@ namespace Unity.PerformanceTesting
         /// <summary>
         /// Test version.
         /// </summary>
-        public string Version;
+        public string Version { get; }
 
         /// <summary>
         /// Adds attribute to specify test version.

@@ -1,10 +1,9 @@
 ﻿using System;
-using Unity.PerformanceTesting.Runtime;
 using UnityEngine;
 
 namespace Unity.PerformanceTesting
 {
-    internal class ResourcesLoader
+    internal static class ResourcesLoader
     {
         public static T Load<T>(string assetPath, string prefsKey) where T : class
         {

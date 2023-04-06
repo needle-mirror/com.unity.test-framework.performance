@@ -38,12 +38,15 @@ namespace Unity.PerformanceTesting
         /// Singleton instance of active performance test.
         /// </summary>
         public static PerformanceTest Active { get; set; }
-        internal static List<IDisposable> Disposables = new List<IDisposable>(1024);
+        private static List <IDisposable> m_Disposables = new List<IDisposable>(1024);
+        internal static List<IDisposable> Disposables
+        {
+            get => m_Disposables;
+            set => m_Disposables = value ?? new List<IDisposable>(1024);
+        }
         PerformanceTestHelper m_PerformanceTestHelper;
 
-        internal delegate void Callback();
-
-        internal static Callback OnTestEnded;
+        public static event Action OnTestEnded;
 
         /// <summary>
         /// Initializes a new performance test and assigns it as singleton.

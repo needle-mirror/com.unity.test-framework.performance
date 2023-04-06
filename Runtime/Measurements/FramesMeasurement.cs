@@ -173,11 +173,7 @@ namespace Unity.PerformanceTesting.Measurements
         {
             ValidateCorrectDynamicMeasurementCountUsage();
 
-            if (!m_DynamicMeasurementCount && m_Executions == 0 && m_Warmup >= 0)
-            {
-                Debug.LogError("Provide execution count or remove warmup count from frames measurement.");
-                yield break;
-            }
+            if (!ValidateMeasurementAndWarmupCount()) yield break;
             
             SettingsOverride();
 
@@ -187,34 +183,11 @@ namespace Unity.PerformanceTesting.Measurements
             {
                 if (m_DynamicMeasurementCount)
                 {
-                    while (true)
-                    {
-                        using (Measure.Scope(m_SampleGroup))
-                        {
-                            yield return null;
-                        }
-
-                        if (SampleCountFulfillsRequirements())
-                            break;
-                    }
+                    yield return RunDynamicMeasurementCount();
                 }
                 else
                 {
-                    m_DesiredFrameCount = m_Executions > 0 ? m_Executions : m_DesiredFrameCount;
-                    for (var i = 0; i < m_DesiredFrameCount; i++)
-                    {
-                        if (m_RecordFrametime)
-                        {
-                            using (Measure.Scope(m_SampleGroup))
-                            {
-                                yield return null;
-                            }
-                        }
-                        else
-                        {
-                            yield return null;
-                        }
-                    }
+                    yield return RunFixedMeasurementCount();
                 }
 
                 // WaitForEndOfFrame coroutine is not invoked on the editor in batch mode
@@ -225,6 +198,47 @@ namespace Unity.PerformanceTesting.Measurements
                     yield return new WaitForEndOfFrame();
                 }
             }
+        }
+        
+        private IEnumerator RunDynamicMeasurementCount()
+        {
+            while (true)
+            {
+                using (Measure.Scope(m_SampleGroup))
+                {
+                    yield return null;
+                }
+                if (SampleCountFulfillsRequirements())
+                    break;
+            }
+        }
+
+        private IEnumerator RunFixedMeasurementCount()
+        {
+            m_DesiredFrameCount = m_Executions > 0 ? m_Executions : m_DesiredFrameCount;
+
+            for (var i = 0; i < m_DesiredFrameCount; i++)
+            {
+                if (m_RecordFrametime)
+                {
+                    using (Measure.Scope(m_SampleGroup))
+                    {
+                        yield return null;
+                    }
+                }
+                else
+                {
+                    yield return null;
+                }
+            }
+        }
+
+        private bool ValidateMeasurementAndWarmupCount()
+        {
+            if (m_DynamicMeasurementCount || m_Executions != 0 || m_Warmup < 0) return true;
+            Debug.LogError("Provide execution count or remove warmup count from frames measurement.");
+            return false;
+
         }
 
         private void ValidateCorrectDynamicMeasurementCountUsage()

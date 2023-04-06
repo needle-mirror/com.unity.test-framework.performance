@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.0.0-pre.2] - 2023-04-06
+### Added
+- Help button, which redirects the user to documentation website
+- Clear Results button, which clears all Performance test results
+- Updated CI to support more Unity versions and expand test coverage
+### Changed
+- Updated the style of toolbar buttons to match that of the Test Runner window for consistency
+- Export button is now disabled instead of hidden when there are no Performance test results
+- Made AutoRefresh toggle retain its state after closing and reopening the window
+- Moved the Performance Test Report from 'Window/Analysis' to 'Window/General' near Test Runner for better accessibility
+### Removed
+- Build project from CI
+### Fixed
+- Issue where running tests with the Test Report window open would cause the error message "The object of type 'Material' has been destroyed" to appear
+- Issues where incorrect labels were displayed at certain scenarios
+- Issues flagged by SonarQube
+
 ## [3.0.0-pre.1] - 2023-03-02
 ### Added
 - Merged 2.8.1 changes that weren't reflected in 2.10.0 release

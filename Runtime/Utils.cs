@@ -216,7 +216,7 @@ namespace Unity.PerformanceTesting.Runtime
         
         internal static SampleGroup[] CreateSampleGroupsFromMarkerNames(params string[] profilerMarkerNames)
         {
-            if (profilerMarkerNames == null) return null;
+            if (profilerMarkerNames == null) return new List<SampleGroup>().ToArray();
             var sampleGroups = new List<SampleGroup>();
             foreach (var marker in profilerMarkerNames)
             {

@@ -29,7 +29,7 @@ namespace Unity.PerformanceTesting.Editor
 
         void ICallbacks.RunFinished(ITestResultAdaptor result)
         {
-            PlayerCallbacks.saved = false;
+            PlayerCallbacks.Saved = false;
 
             try
             {

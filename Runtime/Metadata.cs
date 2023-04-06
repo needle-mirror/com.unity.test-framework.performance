@@ -11,7 +11,7 @@ namespace Unity.PerformanceTesting
     /// <summary>
     /// Helper class to retrieve metadata information about player settings and hardware.
     /// </summary>
-    public class Metadata
+    public static class Metadata
     {
         /// <summary>
         /// Gets hardware information.
@@ -51,7 +51,7 @@ namespace Unity.PerformanceTesting
             run.Player.ScreenHeight = Screen.currentResolution.height;
             run.Player.Fullscreen = Screen.fullScreen;
             run.Player.Batchmode = Application.isBatchMode;
-            run.Player.Development = Application.isEditor ? true : Debug.isDebugBuild;
+            run.Player.Development = Application.isEditor || Debug.isDebugBuild;
             run.Player.Platform = Application.platform.ToString();
             run.Player.GraphicsApi = SystemInfo.graphicsDeviceType.ToString();
         }
