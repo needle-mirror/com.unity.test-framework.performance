@@ -16,7 +16,7 @@ namespace Unity.PerformanceTesting.Tests.Editor
 
             var serialized = test.Serialize();
 
-            var expected = "{\"Name\":\"\",\"Version\":\"\",\"Categories\":[],\"SampleGroups\":[]}";
+            var expected = "{\"Name\":\"\",\"ClassName\":\"\",\"MethodName\":\"\",\"Version\":\"\",\"Categories\":[],\"SampleGroups\":[]}";
             Assert.AreEqual(expected, serialized);
         }
 
@@ -27,6 +27,8 @@ namespace Unity.PerformanceTesting.Tests.Editor
             {
                 Categories = new List<string>() {"CAT1", "CAT2"},
                 Name = "TEST",
+                ClassName = "TEST",
+                MethodName = "TEST",
                 Version = "VERSION",
                 SampleGroups = new List<SampleGroup>()
                 {
@@ -38,7 +40,7 @@ namespace Unity.PerformanceTesting.Tests.Editor
             var serialized = test.Serialize();
 
             var expected =
-                "{\"Name\":\"TEST\",\"Version\":\"VERSION\",\"Categories\":[\"CAT1\",\"CAT2\"],\"SampleGroups\":[{\"Name\":\"SAMPLEGROUP1\",\"Unit\":1,\"IncreaseIsBetter\":true,\"Samples\":[1.0,2.0,3.0],\"Min\":0.0,\"Max\":0.0,\"Median\":0.0,\"Average\":0.0,\"StandardDeviation\":0.0,\"Sum\":0.0},{\"Name\":\"SAMPLEGROUP2\",\"Unit\":4,\"IncreaseIsBetter\":false,\"Samples\":[5.0],\"Min\":0.0,\"Max\":0.0,\"Median\":0.0,\"Average\":0.0,\"StandardDeviation\":0.0,\"Sum\":0.0}]}";
+                "{\"Name\":\"TEST\",\"ClassName\":\"TEST\",\"MethodName\":\"TEST\",\"Version\":\"VERSION\",\"Categories\":[\"CAT1\",\"CAT2\"],\"SampleGroups\":[{\"Name\":\"SAMPLEGROUP1\",\"Unit\":1,\"IncreaseIsBetter\":true,\"Samples\":[1.0,2.0,3.0],\"Min\":0.0,\"Max\":0.0,\"Median\":0.0,\"Average\":0.0,\"StandardDeviation\":0.0,\"Sum\":0.0},{\"Name\":\"SAMPLEGROUP2\",\"Unit\":4,\"IncreaseIsBetter\":false,\"Samples\":[5.0],\"Min\":0.0,\"Max\":0.0,\"Median\":0.0,\"Average\":0.0,\"StandardDeviation\":0.0,\"Sum\":0.0}]}";
             Assert.AreEqual(expected, serialized);
         }
 

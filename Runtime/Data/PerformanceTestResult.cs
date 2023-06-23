@@ -10,9 +10,19 @@ namespace Unity.PerformanceTesting.Data
     public class PerformanceTestResult
     {
         /// <summary>
-        /// Test name.
+        /// Full test name.
         /// </summary>
         [RequiredMember] public string Name;
+        
+        /// <summary>
+        /// Test script name.
+        /// </summary>
+        [RequiredMember] public string ClassName;
+        
+        /// <summary>
+        /// Test method name.
+        /// </summary>
+        [RequiredMember] public string MethodName;
 
         /// <summary>
         /// Test version.

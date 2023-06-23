@@ -23,6 +23,14 @@ namespace Unity.PerformanceTesting
         /// </summary>
         public string Name;
         /// <summary>
+        /// Class name of the test.
+        /// </summary>
+        public string ClassName;
+        /// <summary>
+        /// Method name of the test.
+        /// </summary>
+        public string MethodName;
+        /// <summary>
         /// Version of the test. Default "1".
         /// </summary>
         public string Version;
@@ -68,11 +76,15 @@ namespace Unity.PerformanceTesting
                 ? currentTest.Name.Remove(currentTest.Name.IndexOf("(", StringComparison.Ordinal))
                 : currentTest.Name;
 
+            string className = currentTest.ClassName;
+            
             var fullName = currentTest.MethodName != methodName ? $"{currentTest.ClassName}.{currentTest.MethodName}.{currentTest.Name}" : currentTest.FullName;
 
             var test = new PerformanceTest
             {
                 Name = fullName,
+                ClassName = className,
+                MethodName = methodName,
                 Categories = currentTest.GetAllCategoriesFromTest(),
                 Version = GetVersion(currentTest),
                 m_PerformanceTestHelper = performanceTestHelper

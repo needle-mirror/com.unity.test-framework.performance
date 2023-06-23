@@ -11,11 +11,11 @@ Time Microsecond Median:2018.60 Min:1903.00 Max:2819.80 Avg:2186.35 Std:368.42 S
 
 ## The Performance Test Report
 
-The Performance Test Report (**Window > Analysis > Performance Test Report**) shows a detailed breakdown of individual test runs. This can be used to assess the stability of each test. It provides a visualization of each individual sample recorded within a sample group along with summary statistics for the selected test.
+The Performance Test Report (**Window > General > Performance Test Report**) shows a detailed breakdown of individual test runs. This can be used to assess the stability of each test. It provides a visualization of each individual sample recorded within a sample group along with summary statistics for the selected test.
 
 The Performance Test Report is split into two views: the *test view* and the *sample group view*.
 
-**Test View:** Provides a list of all tests. Each of the columns can be clicked to sort the view. Column values show the sample group with highest deviation.
+**Test View:** Provides a list of all tests. Tests are separated by class names. Each of the columns can be clicked to sort the view. Column values show the sample group with highest deviation.
 
 * *Name* - Name of the test.
 * *Deviation* - The deviation is calculated by dividing the standard deviation by the median for a sample group. It shows the sample group with the highest 'deviation' value. Useful for defining stability of the test.

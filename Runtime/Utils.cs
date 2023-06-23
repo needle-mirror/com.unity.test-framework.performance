@@ -109,10 +109,12 @@ namespace Unity.PerformanceTesting.Runtime
         public static double GetMedianValue(List<double> samples)
         {
             var samplesClone = new List<double>(samples);
+            var middleIndex = samplesClone.Count / 2;
             samplesClone.Sort();
 
-            var middleIdx = samplesClone.Count / 2;
-            return samplesClone[middleIdx];
+            return samplesClone.Count % 2 != 0
+                ? samplesClone[middleIndex]
+                : (samplesClone[middleIndex - 1] + samplesClone[middleIndex]) / 2.0;
         }
 
         public static double GetPercentile(List<double> samples, double percentile)

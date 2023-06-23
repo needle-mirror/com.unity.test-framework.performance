@@ -6,12 +6,13 @@ using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Unity.PerformanceTesting.Data;
+using System.Text.RegularExpressions;
+using System.IO;
 
 namespace Unity.PerformanceTesting.Editor
 {
     internal class TestListTableItem : TreeViewItem
     {
-        public int index;
         public PerformanceTestResult performanceTest;
         public double deviation;
         public double standardDeviation;
@@ -25,43 +26,23 @@ namespace Unity.PerformanceTesting.Editor
         {
             this.performanceTest = performanceTest;
 
-            index = id;
             deviation = 0f;
             if (performanceTest != null)
             {
-                foreach (var sample in performanceTest.SampleGroups)
+                foreach (var sampleGroup in performanceTest.SampleGroups)
                 {
-                    if (sample.Name == "Time")
+                    var thisDeviation =
+                        sampleGroup.Median == 0 ? 0 : sampleGroup.StandardDeviation / sampleGroup.Median;
+
+                    if (sampleGroup.Name == "Time" || sampleGroup.Samples.Count <= 1 || thisDeviation > deviation)
                     {
-                        standardDeviation = sample.StandardDeviation;
-                        median = sample.Median;
-                        min = sample.Min;
-                        max = sample.Max;
-
-                        deviation = standardDeviation / median;
-                        break;
-                    }
-
-                    if (sample.Samples.Count <= 1)
-                    {
-                        standardDeviation = sample.StandardDeviation;
-                        median = sample.Median;
-                        min = sample.Min;
-                        max = sample.Max;
-
-                        deviation = standardDeviation / median;
-                        break;
-                    }
-
-                    double thisDeviation = sample.StandardDeviation / sample.Median;
-                    if (thisDeviation > deviation)
-                    {
-                        standardDeviation = sample.StandardDeviation;
-                        median = sample.Median;
-                        min = sample.Min;
-                        max = sample.Max;
-
+                        standardDeviation = sampleGroup.StandardDeviation;
+                        median = sampleGroup.Median;
+                        min = sampleGroup.Min;
+                        max = sampleGroup.Max;
                         deviation = thisDeviation;
+
+                        break;
                     }
                 }
             }
@@ -70,6 +51,8 @@ namespace Unity.PerformanceTesting.Editor
 
     internal class TestListTable : TreeView
     {
+        private static readonly GUIContent s_GUIOpenTest = EditorGUIUtility.TrTextContent("Open source code");
+        
         TestReportWindow m_testReportWindow;
 
         const float kRowHeights = 20f;
@@ -78,7 +61,6 @@ namespace Unity.PerformanceTesting.Editor
         // All columns
         public enum MyColumns
         {
-            Index,
             Name,
             SampleCount,
             StandardDeviation,
@@ -90,7 +72,6 @@ namespace Unity.PerformanceTesting.Editor
 
         public enum SortOption
         {
-            Index,
             Name,
             SampleCount,
             StandardDeviation,
@@ -103,7 +84,6 @@ namespace Unity.PerformanceTesting.Editor
         // Sort options per column
         SortOption[] m_SortOptions =
         {
-            SortOption.Index,
             SortOption.Name,
             SortOption.SampleCount,
             SortOption.StandardDeviation,
@@ -138,24 +118,37 @@ namespace Unity.PerformanceTesting.Editor
 
         protected override TreeViewItem BuildRoot()
         {
-            int idForhiddenRoot = -1;
-            int depthForHiddenRoot = -1;
-            TestListTableItem root = new TestListTableItem(idForhiddenRoot, depthForHiddenRoot, "root", null);
-
+            var root = new TestListTableItem(-1, -1, "root", null);
             var results = m_testReportWindow.GetResults();
-            if (results != null)
+            var searchText = m_testReportWindow.searchString?.ToLower();
+            var methodItemId = 0;
+        
+            if (results == null) return root;
+            
+            var classItemId = results.Results.Count(); // Class ID will always be bigger than the count of results (from methods) we get
+            var classGroups = results.Results.GroupBy(r => r.ClassName);
+        
+            foreach (var classGroup in classGroups)
             {
-                int index = 0;
-                foreach (var result in results.Results)
-                {
-                    var item = new TestListTableItem(index, 0, result.Name, result);
-                    root.AddChild(item);
+                var classItem = new TestListTableItem(classItemId++, 0, classGroup.Key, null);
+                root.AddChild(classItem);
 
-                    // Maintain index to map to main markers
-                    index += 1;
+                // Create method items and add them to the class item if they match the search text
+                // Currently Name provides both MethodName and Test parameter - example would be - ValueSource(Cube)
+                // We are using Name and simply removing the ClassPart as we need to keep that parameter
+                var methodItems = classGroup
+                    .Select(r => new TestListTableItem(methodItemId++, 1, r.Name.Substring(r.Name.IndexOf(classGroup.Key, StringComparison.Ordinal) + classGroup.Key.Length + 1), r));
+                foreach (var methodItem in methodItems)
+                {
+                    var matchesSearchText = string.IsNullOrEmpty(searchText) ||
+                                            methodItem.displayName.ToLower().Contains(searchText);
+                    if (matchesSearchText) classItem.AddChild(methodItem);
                 }
             }
 
+            // Remove class items with no children
+            root.children?.RemoveAll(c => !c.hasChildren);
+        
             return root;
         }
 
@@ -165,10 +158,7 @@ namespace Unity.PerformanceTesting.Editor
 
             if (rootItem != null && rootItem.children != null)
             {
-                foreach (TestListTableItem node in rootItem.children)
-                {
-                    m_Rows.Add(node);
-                }
+                m_Rows.AddRange(base.BuildRows(root));
             }
 
             SortIfNeeded(m_Rows);
@@ -179,6 +169,65 @@ namespace Unity.PerformanceTesting.Editor
         void OnSortingChanged(MultiColumnHeader _multiColumnHeader)
         {
             SortIfNeeded(GetRows());
+        }
+        
+        private bool IsMethodItem(int id)
+        {
+            var item = FindItem(id, rootItem);
+            return item?.depth == 1;
+        }
+        
+        protected override void ContextClickedItem(int id)
+        {
+            if (IsMethodItem(id))
+            {
+                var m = new GenericMenu();
+
+                m.AddItem(s_GUIOpenTest,
+                    false,
+                    () => OpenScript(id));
+                m.AddSeparator("");
+                m.ShowAsContext();
+            }
+        }
+        
+
+        private void OpenScript(int id)
+        {
+            // Get class and method names from PerformanceTestResult class
+            // If class name is something like this "Unity.Logging.Tests.JsonLogTests" return only last part
+            // We should change the behaviour for ClassName in xml to report only class name and Name report the full name, but for now I'm leaving it with this small hack
+            string scriptName  = m_testReportWindow.GetResults().Results[id].ClassName.Split('.').Last();
+            string methodName  = m_testReportWindow.GetResults().Results[id].MethodName;
+            
+            // Find the script asset by its name
+            string scriptGuid = AssetDatabase.FindAssets("t:Script " + scriptName).FirstOrDefault();
+            
+            if (scriptGuid != null)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(scriptGuid);
+                
+                string scriptText = File.ReadAllText(path);
+
+                // Find the line number of the method using a regular expression
+                Match methodMatch = Regex.Match(scriptText, $@"\b{methodName}\b\s*\(");
+                if (methodMatch.Success)
+                {
+                    int lineNumber = scriptText.Substring(0, methodMatch.Index).Split('\n').Length;
+                    UnityEngine.Object scriptObj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
+
+                    // Open the script at the line number of the method definition
+                    AssetDatabase.OpenAsset(scriptObj, lineNumber);
+                }
+                else
+                {
+                    Debug.LogError($"Method not found: {methodName}");
+                }
+            }
+            else
+            {
+                Debug.LogError($"Script not found: {scriptName}");
+            }
         }
 
         void SortIfNeeded(IList<TreeViewItem> rows)
@@ -198,10 +247,7 @@ namespace Unity.PerformanceTesting.Editor
 
             // Update the data with the sorted content
             rows.Clear();
-            foreach (TestListTableItem node in rootItem.children)
-            {
-                rows.Add(node);
-            }
+            AddExpandedRows(rootItem, rows);
 
             Repaint();
         }
@@ -215,43 +261,45 @@ namespace Unity.PerformanceTesting.Editor
                 return;
             }
 
-            var myTypes = rootItem.children.Cast<TestListTableItem>();
-            var orderedQuery = InitialOrder(myTypes, sortedColumns);
-            for (int i = 1; i < sortedColumns.Length; i++)
+            var classItems = rootItem.children;
+            
+            foreach (var classItem in classItems)
             {
-                SortOption sortOption = m_SortOptions[sortedColumns[i]];
-                bool ascending = multiColumnHeader.IsSortedAscending(sortedColumns[i]);
-
-                switch (sortOption)
+                var myTypes = classItem.children.Cast<TestListTableItem>();
+                var orderedQuery = InitialOrder(myTypes, sortedColumns);
+                for (int i = 1; i < sortedColumns.Length; i++)
                 {
-                    case SortOption.Index:
-                        orderedQuery = orderedQuery.ThenBy(l => l.index, ascending);
-                        break;
-                    case SortOption.Name:
-                        orderedQuery = orderedQuery.ThenBy(l => l.displayName, ascending);
-                        break;
-                    case SortOption.SampleCount:
-                        orderedQuery = orderedQuery.ThenBy(l => l.performanceTest.SampleGroups.Count, ascending);
-                        break;
-                    case SortOption.Deviation:
-                        orderedQuery = orderedQuery.ThenBy(l => l.deviation, ascending);
-                        break;
-                    case SortOption.StandardDeviation:
-                        orderedQuery = orderedQuery.ThenBy(l => l.standardDeviation, ascending);
-                        break;
-                    case SortOption.Median:
-                        orderedQuery = orderedQuery.ThenBy(l => l.median, ascending);
-                        break;
-                    case SortOption.Min:
-                        orderedQuery = orderedQuery.ThenBy(l => l.min, ascending);
-                        break;
-                    case SortOption.Max:
-                        orderedQuery = orderedQuery.ThenBy(l => l.max, ascending);
-                        break;
-                }
-            }
+                    SortOption sortOption = m_SortOptions[sortedColumns[i]];
+                    bool ascending = multiColumnHeader.IsSortedAscending(sortedColumns[i]);
 
-            rootItem.children = orderedQuery.Cast<TreeViewItem>().ToList();
+                    switch (sortOption)
+                    {
+                        case SortOption.Name:
+                            orderedQuery = orderedQuery.ThenBy(l => l.displayName, ascending);
+                            break;
+                        case SortOption.SampleCount:
+                            orderedQuery = orderedQuery.ThenBy(l => l.performanceTest.SampleGroups.Count, ascending);
+                            break;
+                        case SortOption.Deviation:
+                            orderedQuery = orderedQuery.ThenBy(l => l.deviation, ascending);
+                            break;
+                        case SortOption.StandardDeviation:
+                            orderedQuery = orderedQuery.ThenBy(l => l.standardDeviation, ascending);
+                            break;
+                        case SortOption.Median:
+                            orderedQuery = orderedQuery.ThenBy(l => l.median, ascending);
+                            break;
+                        case SortOption.Min:
+                            orderedQuery = orderedQuery.ThenBy(l => l.min, ascending);
+                            break;
+                        case SortOption.Max:
+                            orderedQuery = orderedQuery.ThenBy(l => l.max, ascending);
+                            break;
+                    }
+                }
+                
+                classItem.children = orderedQuery.Cast<TreeViewItem>().ToList();
+            }
         }
 
         IOrderedEnumerable<TestListTableItem> InitialOrder(IEnumerable<TestListTableItem> myTypes, int[] history)
@@ -260,8 +308,6 @@ namespace Unity.PerformanceTesting.Editor
             bool ascending = multiColumnHeader.IsSortedAscending(history[0]);
             switch (sortOption)
             {
-                case SortOption.Index:
-                    return myTypes.Order(l => l.index, ascending);
                 case SortOption.Name:
                     return myTypes.Order(l => l.displayName, ascending);
                 case SortOption.SampleCount:
@@ -282,49 +328,63 @@ namespace Unity.PerformanceTesting.Editor
             }
 
             // default
-            return myTypes.Order(l => l.index, ascending);
+            return myTypes.Order(l => l.displayName, ascending);
         }
 
         protected override void RowGUI(RowGUIArgs args)
         {
             var item = (TestListTableItem)args.item;
+            var nameRect = args.GetCellRect(0);
+            nameRect.x += GetContentIndent(item);
+            nameRect.xMax -= GetContentIndent(item);
 
-            for (int i = 0; i < args.GetNumVisibleColumns(); ++i)
+            if (item.depth == 0)
             {
-                CellGUI(args.GetCellRect(i), item, (MyColumns)args.GetColumn(i), ref args);
+                EditorGUI.LabelField(nameRect, item.displayName);
+            }
+            
+            if (item.depth == 1)
+            {
+                for (var i = 0; i < args.GetNumVisibleColumns(); ++i)
+                {
+                    var column = (MyColumns)args.GetColumn(i);
+
+                    if (column == MyColumns.Name)
+                    {
+                        EditorGUI.LabelField(nameRect, item.displayName);
+                    }
+                    else
+                    {
+                        CellGUI(args.GetCellRect(i), item, column);
+                    }
+                }
             }
         }
 
-        void CellGUI(Rect cellRect, TestListTableItem item, MyColumns column, ref RowGUIArgs args)
+        void CellGUI(Rect cellRect, TestListTableItem item, MyColumns column)
         {
             // Center cell rect vertically (makes it easier to place controls, icons etc in the cells)
             CenterRectUsingSingleLineHeight(ref cellRect);
 
             switch (column)
             {
-                case MyColumns.Index:
-                    EditorGUI.LabelField(cellRect, string.Format("{0}", item.index));
-                    break;
-                case MyColumns.Name:
-                    EditorGUI.LabelField(cellRect, string.Format("{0}", item.displayName));
-                    break;
                 case MyColumns.SampleCount:
-                    EditorGUI.LabelField(cellRect, string.Format("{0}", item.performanceTest.SampleGroups.Count));
+                    EditorGUI.LabelField(cellRect, $"{item.performanceTest.SampleGroups.Count}");
                     break;
                 case MyColumns.Deviation:
-                    EditorGUI.LabelField(cellRect, string.Format("{0:f2}", item.deviation));
+                    EditorGUI.LabelField(cellRect, $"{item.deviation:f2}");
                     break;
                 case MyColumns.StandardDeviation:
-                    EditorGUI.LabelField(cellRect, string.Format("{0:f2}", item.standardDeviation));
+                    EditorGUI.LabelField(cellRect, $"{item.standardDeviation:f2}");
                     break;
                 case MyColumns.Median:
-                    EditorGUI.LabelField(cellRect, string.Format("{0:f2}", item.median));
+                    EditorGUI.LabelField(cellRect, $"{item.median:f2}");
                     break;
                 case MyColumns.Min:
-                    EditorGUI.LabelField(cellRect, string.Format("{0:f2}", item.min));
+                    EditorGUI.LabelField(cellRect, $"{item.min:f2}");
                     break;
                 case MyColumns.Max:
-                    EditorGUI.LabelField(cellRect, string.Format("{0:f2}", item.max));
+                    EditorGUI.LabelField(cellRect, $"{item.max:f2}");
                     break;
             }
         }
@@ -362,7 +422,6 @@ namespace Unity.PerformanceTesting.Editor
             var columnList = new List<MultiColumnHeaderState.Column>();
             HeaderData[] headerData = new HeaderData[]
             {
-                new HeaderData("Index", "Ordering from the test run", width : 40, minWidth : 50),
                 new HeaderData("Name", "Name of test", width : 500, minWidth : 100, autoResize : false, allowToggleVisibility : false, ascending : true),
                 new HeaderData("Groups", "Number of Sample Groups", width : 60, minWidth : 50),
                 new HeaderData("SD", "Standard Deviation"), //  (of sample group with largest deviation)
@@ -393,7 +452,6 @@ namespace Unity.PerformanceTesting.Editor
             var state = new MultiColumnHeaderState(columns);
             state.visibleColumns = new int[]
             {
-                (int)MyColumns.Index,
                 (int)MyColumns.Name,
                 (int)MyColumns.SampleCount,
                 (int)MyColumns.Deviation,

@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.0.1] - 2023-06-23
+### Changed
+- Removed false "unityRelease" field from package.json
+
+## [3.0.0] - 2023-06-05
+### Added
+- "Open Source Code" menu item to test results
+- Test Filter to filter results by test name
+### Changed
+- Items in test results are grouped by classname
+- Make Sample Groups to be shown only when clicking on items with them 
+- "New Data available" label re-located 
+- Replaced CamelCase headers with regular text headers in csv report
+- Replaced TRUE/FALSE with Yes/No in the "Increase Is Better" column in csv report
+- Renamed the default report name to PerformanceTestResults
+- Documentation updates to reflect API changes
+### Fixed
+- Median calculation in case of even number of samples 
+- Deviation division by zero
+- Exception thrown after clicking Cancel button (during Test Result export)
+- The issue where the last column was always empty in csv report
+
 ## [3.0.0-pre.2] - 2023-04-06
 ### Added
 - Help button, which redirects the user to documentation website

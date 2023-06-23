@@ -117,8 +117,8 @@ public void Empty()
 
     using (Measure.Scope())
     {
-        Measure.Custom(allocated, Profiler.GetTotalAllocatedMemoryLong() / 1048576f);
-        Measure.Custom(reserved, Profiler.GetTotalReservedMemoryLong() / 1048576f);
+        Measure.Custom(allocated, UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1048576f);
+        Measure.Custom(reserved, UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() / 1048576f);
     }
 }
 ```
@@ -208,9 +208,10 @@ For comparing performance data between runs, use the [Unity Performance Benchmar
     [UnityTest, Performance]
     public IEnumerator Rendering_SampleScene()
     {
-        using(Measure.Scope("Setup.LoadScene"))
+        using(Measure.Scope("LoadScene"))
         {
-            SceneManager.LoadScene("SampleScene");
+            // Add scene to Build Settings before running test 
+            SceneManager.LoadScene("SampleScene"); 
         }
         yield return null;
 
@@ -226,7 +227,7 @@ For comparing performance data between runs, use the [Unity Performance Benchmar
     {
         var allocated = new SampleGroup("TotalAllocatedMemory", SampleUnit.Megabyte);
         var reserved = new SampleGroup("TotalReservedMemory", SampleUnit.Megabyte);
-        Measure.Custom(allocated, Profiler.GetTotalAllocatedMemoryLong() / 1048576f);
-        Measure.Custom(reserved, Profiler.GetTotalReservedMemoryLong() / 1048576f);
+        Measure.Custom(allocated, UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1048576f);
+        Measure.Custom(reserved, UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() / 1048576f);
     }
 ```

@@ -8,9 +8,8 @@ When you want to record samples outside of frame time, method time, or profiler 
 [Test, Performance]
 public void Test()
 {
-	SampleGroup samplegroup = new SampleGroup("TotalAllocatedMemory", SampleUnit.Megabyte, false);
-    var allocatedMemory = Profiler.GetTotalAllocatedMemoryLong() / 1048576f
-    Measure.Custom(samplegroup, allocatedMemory);
-
+    SampleGroup sampleGroup = new SampleGroup("TotalAllocatedMemory", SampleUnit.Megabyte, false);
+    var allocatedMemory = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1048576f;
+    Measure.Custom(sampleGroup, allocatedMemory);
 }
 ```
