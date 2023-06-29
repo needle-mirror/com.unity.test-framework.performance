@@ -5,5 +5,6 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Unity.PerformanceTesting.Editor")]
 [assembly: InternalsVisibleTo("Unity.PerformanceTesting.Tests.Runtime")]
+[assembly: InternalsVisibleTo("Unity.GraphTools.Foundation.Testing.Editor")]
 
 [assembly: AssemblyVersion("3.0.0")]
