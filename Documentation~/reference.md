@@ -1,6 +1,6 @@
 # Reference
 
-This section contains a reference for attributes and classes the Performance Testing Extension supports.
+This section contains a reference for attributes and classes the Performance Testing Package supports.
 
 ## Test Attributes
 **[Performance]** - Use this with  `Test` and `UnityTest` attributes. It will initialize necessary test setup for performance tests.

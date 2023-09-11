@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.3] - 2023-09-11
+## Fixed 
+- Fixed issue where exception in OnTestEnded callback would result in EndTest method not finalising properly
+### Changed
+- Temporarily removed "Open Script" from Performance Benchmark Window
+- Some clarifications in documentation were added ("Extension" naming changed to "Package", Package limitations clarified)
+
 ## [3.0.2] - 2023-06-29
 ### Changed
 - Added additional InternalsVisibleTo attribute for internal test assembly

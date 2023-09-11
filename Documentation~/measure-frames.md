@@ -12,7 +12,7 @@ Records time per frame by default and provides additional properties/methods to 
 
 ## Limitations
 
-Currently not supported in editor tests when in edit mode.
+* Not supported in Unity Test Framework [Edit Mode tests](https://docs.unity3d.com/Packages/com.unity.test-framework@latest?subfolder=/manual/edit-mode-vs-play-mode-tests.html#edit-mode-tests).
 
 #### Example 1: Simple frame time measurement using default values of at least 7 frames and default WarmupCount (see description above).
 

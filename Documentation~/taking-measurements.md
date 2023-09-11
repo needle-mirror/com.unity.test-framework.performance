@@ -1,6 +1,6 @@
 # Taking measurements
 
-The Performance Testing Extension provides several API methods for taking measurements in your performance test, depending on what you need to measure and how you want to do it. Include `using Unity.PerformanceTesting` at the top of your script to access the methods.
+The Performance Testing Package provides several API methods for taking measurements in your performance test, depending on what you need to measure and how you want to do it. Include `using Unity.PerformanceTesting` at the top of your script to access the methods.
 
 The pages in this section detail the specifics of each measurement method with examples:
 

@@ -6,8 +6,6 @@ using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Unity.PerformanceTesting.Data;
-using System.Text.RegularExpressions;
-using System.IO;
 
 namespace Unity.PerformanceTesting.Editor
 {
@@ -51,8 +49,6 @@ namespace Unity.PerformanceTesting.Editor
 
     internal class TestListTable : TreeView
     {
-        private static readonly GUIContent s_GUIOpenTest = EditorGUIUtility.TrTextContent("Open source code");
-        
         TestReportWindow m_testReportWindow;
 
         const float kRowHeights = 20f;
@@ -137,7 +133,19 @@ namespace Unity.PerformanceTesting.Editor
                 // Currently Name provides both MethodName and Test parameter - example would be - ValueSource(Cube)
                 // We are using Name and simply removing the ClassPart as we need to keep that parameter
                 var methodItems = classGroup
-                    .Select(r => new TestListTableItem(methodItemId++, 1, r.Name.Substring(r.Name.IndexOf(classGroup.Key, StringComparison.Ordinal) + classGroup.Key.Length + 1), r));
+                    .Select(r => 
+                    {
+                        // Calculate the starting index for the substring to extract methodname from full name
+                        int startIndex = r.Name.IndexOf(classGroup.Key, StringComparison.Ordinal) + classGroup.Key.Length + 1;
+
+                        // Check if the calculated startIndex is within the bounds of the string
+                        // If it's within bounds, extract the substring; otherwise, return full name
+                        string methodName = startIndex < r.Name.Length ? r.Name.Substring(startIndex) : r.Name;
+
+                        // Create a TestListTableItem using the extracted methodName and other parameters
+                        return new TestListTableItem(methodItemId++, 1, methodName, r);
+                    });
+                
                 foreach (var methodItem in methodItems)
                 {
                     var matchesSearchText = string.IsNullOrEmpty(searchText) ||
@@ -171,65 +179,6 @@ namespace Unity.PerformanceTesting.Editor
             SortIfNeeded(GetRows());
         }
         
-        private bool IsMethodItem(int id)
-        {
-            var item = FindItem(id, rootItem);
-            return item?.depth == 1;
-        }
-        
-        protected override void ContextClickedItem(int id)
-        {
-            if (IsMethodItem(id))
-            {
-                var m = new GenericMenu();
-
-                m.AddItem(s_GUIOpenTest,
-                    false,
-                    () => OpenScript(id));
-                m.AddSeparator("");
-                m.ShowAsContext();
-            }
-        }
-        
-
-        private void OpenScript(int id)
-        {
-            // Get class and method names from PerformanceTestResult class
-            // If class name is something like this "Unity.Logging.Tests.JsonLogTests" return only last part
-            // We should change the behaviour for ClassName in xml to report only class name and Name report the full name, but for now I'm leaving it with this small hack
-            string scriptName  = m_testReportWindow.GetResults().Results[id].ClassName.Split('.').Last();
-            string methodName  = m_testReportWindow.GetResults().Results[id].MethodName;
-            
-            // Find the script asset by its name
-            string scriptGuid = AssetDatabase.FindAssets("t:Script " + scriptName).FirstOrDefault();
-            
-            if (scriptGuid != null)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(scriptGuid);
-                
-                string scriptText = File.ReadAllText(path);
-
-                // Find the line number of the method using a regular expression
-                Match methodMatch = Regex.Match(scriptText, $@"\b{methodName}\b\s*\(");
-                if (methodMatch.Success)
-                {
-                    int lineNumber = scriptText.Substring(0, methodMatch.Index).Split('\n').Length;
-                    UnityEngine.Object scriptObj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
-
-                    // Open the script at the line number of the method definition
-                    AssetDatabase.OpenAsset(scriptObj, lineNumber);
-                }
-                else
-                {
-                    Debug.LogError($"Method not found: {methodName}");
-                }
-            }
-            else
-            {
-                Debug.LogError($"Script not found: {scriptName}");
-            }
-        }
-
         void SortIfNeeded(IList<TreeViewItem> rows)
         {
             if (rows.Count <= 1)

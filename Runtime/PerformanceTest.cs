@@ -121,13 +121,33 @@ namespace Unity.PerformanceTesting
 
             DisposeMeasurements();
             Active.CalculateStatisticalValues();
-            OnTestEnded?.Invoke();
-            Active.LogOutput();
 
-            TestContext.Out.WriteLine("##performancetestresult2:" + Active.Serialize());
-            PlayerCallbacks.LogMetadata();
-            Active = null;
-            GC.Collect();
+            try
+            {
+                // Notify subscribers that the test has ended by invoking OnTestEnded event
+                OnTestEnded?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                // An exception occurred while invoking the OnTestEnded event.
+                // Log the error message, exception type, and stack trace for troubleshooting.
+                Debug.LogError($"An exception occurred in OnTestEnd callback: {ex.GetType()}: {ex.Message}\n{ex.StackTrace}");
+            }
+            finally
+            {
+                // Regardless of whether the event invocation succeeded or not, perform cleanup
+                // and finalize the test-related operations.
+                PerformCleanupAndFinalization();
+            }
+        }
+        
+        internal static void PerformCleanupAndFinalization()
+        {
+            Active.LogOutput(); // Log test output
+            TestContext.Out.WriteLine("##performancetestresult2:" + Active.Serialize()); // Log test result
+            PlayerCallbacks.LogMetadata(); // Log metadata
+            Active = null; // Clear active object
+            GC.Collect(); // Trigger garbage collection to free resources
         }
 
         private static void DisposeMeasurements()

@@ -1,4 +1,4 @@
-* [Performance Testing Extension overview](./index.md)
+* [Performance Testing Package overview](./index.md)
 * [Taking measurements](./taking-measurements.md)
   * [Measure.Method](./measure-method.md)
   * [Measure.Frames](./measure-frames.md)

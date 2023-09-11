@@ -1,12 +1,14 @@
 # Measure.ProfilerMarkers()
 
-Used to record profiler markers. Profiler marker timings are recorded automatically and sampled within the scope of the `using` statement. Names should match profiler marker labels. Profiler markers are sampled once per frame. Sampling the same profiler marker per frame will result in the sum of all invocations. Note that deep and editor profiling is not available. Profiler markers created using `Profiler.BeginSample()` are not supported, switch to `ProfilerMarker` if possible. 
+Used to record profiler markers. Profiler marker timings are recorded automatically and sampled within the scope of the `using` statement. Names should match profiler marker labels. Profiler markers are sampled once per frame. Sampling the same profiler marker per frame will result in the sum of all invocations. 
 
 You can also create your own SampleGroups, specifying a custom name and the measurement units you want your results in, see [example 2](#example-2-measuring-profiler-markers-in-a-scope-with-custom-samplegroups). 
 
 ## Limitations
 
-Currently not supported in editor tests when in edit mode.
+* Not supported in Unity Test Framework [Edit Mode tests](https://docs.unity3d.com/Packages/com.unity.test-framework@latest?subfolder=/manual/edit-mode-vs-play-mode-tests.html#edit-mode-tests).
+* Not supported in the Unity Profiler's [Deep Profiling](https://docs.unity3d.com/Manual/ProfilerWindow.html#deep-profiling) mode.
+* Profiler markers created using `Profiler.BeginSample()` are not supported, switch to `ProfilerMarker` if possible.
 
 #### Example: Measuring profiler markers in a scope
 
