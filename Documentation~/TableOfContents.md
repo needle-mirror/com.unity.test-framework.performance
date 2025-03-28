@@ -7,4 +7,7 @@
   * [Measure.Custom](./measure-custom.md)
 * [Writing tests](./writing-tests.md)
 * [Viewing results](./viewing-results.md)
-* [Reference](./reference.md)
+* [Reference]
+  * [Classes](./classes.md)
+  * [Test attributes](./test-attributes.md)
+  * [Command-line arguments](./cmd-line-args.md)

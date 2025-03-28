@@ -1,24 +1,12 @@
 ﻿using System;
 using System.IO;
 using Unity.PerformanceTesting.Runtime;
-using UnityEditor;
 using UnityEngine;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEditor.TestTools.TestRunner.CommandLineTest;
 
 namespace Unity.PerformanceTesting.Editor
 {
-    [InitializeOnLoad]
-    internal class TestRunnerInitializer
-    {
-        static TestRunnerInitializer()
-        {
-            var api = ScriptableObject.CreateInstance<TestRunnerApi>();
-            var obj = ScriptableObject.CreateInstance<PerformanceTestRunSaver>();
-            api.RegisterCallbacks(obj);
-        }
-    }
-
     [Serializable]
     internal class PerformanceTestRunSaver : ScriptableObject, ICallbacks
     {

@@ -54,6 +54,9 @@ namespace Unity.PerformanceTesting
         }
         PerformanceTestHelper m_PerformanceTestHelper;
 
+        /// <summary>
+        /// An action to be invoked when a performance test has finished execution.
+        /// </summary>
         public static event Action OnTestEnded;
 
         /// <summary>

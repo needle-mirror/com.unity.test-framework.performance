@@ -39,7 +39,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// Records provided profiler markers once per frame.
         /// </summary>
         /// <param name="profilerMarkerNames">Profiler marker names as in profiler window.</param>
-        /// <returns></returns>
+        /// <returns>An updated instance of the FramesMeasurement to be used in fluent syntax.</returns>
         public FramesMeasurement ProfilerMarkers(params string[] profilerMarkerNames)
         {
             m_ProfilerSampleGroups = Utils.CreateSampleGroupsFromMarkerNames(profilerMarkerNames);
@@ -50,7 +50,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// Records provided profiler markers once per frame.
         /// </summary>
         /// <param name="sampleGroups">List of SampleGroups where a name matches the profiler marker and desired SampleUnit</param>
-        /// <returns></returns>
+        /// <returns>An updated instance of the FramesMeasurement to be used in fluent syntax.</returns>
         public FramesMeasurement ProfilerMarkers(params SampleGroup[] sampleGroups)
         {
             m_ProfilerSampleGroups = sampleGroups;
@@ -61,7 +61,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// Overrides the name of default sample group "Time".
         /// </summary>
         /// <param name="name">Name of the sample group.</param>
-        /// <returns></returns>
+        /// <returns>An updated instance of the FramesMeasurement to be used in fluent syntax.</returns>
         public FramesMeasurement SampleGroup(string name)
         {
             m_SampleGroup.Name = name; 
@@ -72,7 +72,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// Overrides the default sample group "Time"
         /// </summary>
         /// <param name="sampleGroup">Sample group to use.</param>
-        /// <returns></returns>
+        /// <returns>An updated instance of the FramesMeasurement to be used in fluent syntax.</returns>
         public FramesMeasurement SampleGroup(SampleGroup sampleGroup)
         {
             m_SampleGroup = sampleGroup;
@@ -83,7 +83,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// Count of measurements to take.
         /// </summary>
         /// <param name="count">Count of measurements.</param>
-        /// <returns></returns>
+        /// <returns>An updated instance of the FramesMeasurement to be used in fluent syntax.</returns>
         public FramesMeasurement MeasurementCount(int count)
         {
             m_Executions = count;
@@ -97,7 +97,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// A default margin of error range of 2% and a default confidence interval of 99% will be used.
         /// </summary>
         /// <param name="outlierMode">Outlier mode allows to include or exclude outliers when evaluating the stop criterion.</param>
-        /// <returns></returns>
+        /// <returns>An updated instance of the FramesMeasurement to be used in fluent syntax.</returns>
         public FramesMeasurement DynamicMeasurementCount(OutlierMode outlierMode = k_DefaultOutlierMode)
         {
             m_DynamicMeasurementCount = true;
@@ -113,7 +113,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// <param name="maxRelativeError">The maximum relative error of the mean that the margin of error must fall into.</param>
         /// <param name="confidenceLevel">The confidence interval which will be used to calculate the margin of error.</param>
         /// <param name="outlierMode">Outlier mode allows to include or exclude outliers when evaluating the stop criterion.</param>
-        /// <returns></returns>
+        /// <returns>An updated instance of the FramesMeasurement to be used in fluent syntax.</returns>
         public FramesMeasurement DynamicMeasurementCount(double maxRelativeError, ConfidenceLevel confidenceLevel = k_DefaultConfidenceLevel,
             OutlierMode outlierMode = k_DefaultOutlierMode)
         {
@@ -128,7 +128,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// Count of warmup executions.
         /// </summary>
         /// <param name="count">Count of warmup executions.</param>
-        /// <returns></returns>
+        /// <returns>An updated instance of the FramesMeasurement to be used in fluent syntax.</returns>
         public FramesMeasurement WarmupCount(int count)
         {
             m_Warmup = count;
@@ -138,7 +138,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// <summary>
         /// Specifies frame times should not be recorded.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An updated instance of the FramesMeasurement to be used in fluent syntax.</returns>
         public FramesMeasurement DontRecordFrametime()
         {
             m_RecordFrametime = false;
@@ -149,7 +149,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// Switches frame time measurement to asynchronous scope measurement.
         /// </summary>
         /// <param name="name">Sample group name.</param>
-        /// <returns></returns>
+        /// <returns>A ScopedFrameTimeMeasurement instance configured according to the given arguments.</returns>
         public ScopedFrameTimeMeasurement Scope(string name = "Time")
         {
             return new ScopedFrameTimeMeasurement(name);
@@ -159,7 +159,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// Switches frame time measurement to asynchronous scope measurement.
         /// </summary>
         /// <param name="sampleGroup">Sample group to save measurements.</param>
-        /// <returns></returns>
+        /// <returns>A ScopedFrameTimeMeasurement instance configured according to the given arguments.</returns>
         public ScopedFrameTimeMeasurement Scope(SampleGroup sampleGroup)
         {
             return new ScopedFrameTimeMeasurement(sampleGroup);

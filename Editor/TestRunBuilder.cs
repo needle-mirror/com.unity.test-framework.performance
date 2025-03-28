@@ -191,12 +191,6 @@ namespace Unity.PerformanceTesting.Editor
             AssetDatabase.CreateFolder("Assets", "Resources");
         }
 
-        /// <summary>
-        /// Serializes given object to json and saves it in the provided path. 
-        /// </summary>
-        /// <param name="obj">Object to serialize.</param>
-        /// <param name="path">Path to save to.</param>
-        /// <returns></returns>
         private string SaveToStorage(object obj, string path)
         {
             var json = JsonUtility.ToJson(obj);
@@ -204,12 +198,6 @@ namespace Unity.PerformanceTesting.Editor
             return json;
         }
 
-        /// <summary>
-        /// Serializes given object to json and saves it in player prefs using provided key. Requires Resources folder to exist.
-        /// </summary>
-        /// <param name="obj">Object to serialize.</param>
-        /// <param name="key">Unique key to use as player prefs key.</param>
-        /// <returns></returns>
         private string SaveToPrefs(object obj, string key)
         {
             var json = JsonUtility.ToJson(obj, true);

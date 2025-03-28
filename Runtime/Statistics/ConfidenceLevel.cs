@@ -2,6 +2,9 @@ using System;
 
 namespace Unity.PerformanceTesting.Statistics
 {
+    /// <summary>
+    /// Represents a statistical confidence level.
+    /// </summary>
     public enum ConfidenceLevel
     {
         /// <summary>

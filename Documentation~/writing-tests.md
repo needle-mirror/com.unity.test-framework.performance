@@ -131,7 +131,32 @@ For comparing performance data between runs, use the [Unity Performance Benchmar
 
 ## Further examples
 
-#### Example 1: Measure execution time to serialize simple object to JSON
+#### Example 1: Measure Frame Time For Scene
+
+``` csharp
+    [UnityTest, Performance, Version("4")]
+    public IEnumerator MainSceneFrameTime_StartPosition()
+    { 
+        SceneManager.LoadScene("Demo", LoadSceneMode.Single);
+        
+        // Measure initial time of first 25 frames after loading the scene
+        using(Measure.Frames().Scope("FrameTime.FirstFramesAfterLoadingScene"))
+        {
+            for (var i = 0; i < 25; i++)
+            {
+                yield return null;
+            }
+        }
+
+        // Measure frame times for ten seconds during rest of the "Demo" scene
+        using (Measure.Frames().Scope("FrameTime.Main"))
+        {
+            yield return new WaitForSeconds(10);
+        }
+    }
+```
+
+#### Example 2: Measure execution time to serialize simple object to JSON
 
 ``` csharp
     [Test, Performance, Version("2")]
@@ -174,7 +199,7 @@ For comparing performance data between runs, use the [Unity Performance Benchmar
 ```
 
 
-#### Example 2: Measure execution time to create 5000 simple cubes
+#### Example 3: Measure execution time to create 5000 simple cubes
 
 ``` csharp
     string[] markers =
@@ -199,23 +224,6 @@ For comparing performance data between runs, use the [Unity Performance Benchmar
                 }
             }
         }
-    }
-```
-
-#### Example 3: Scene measurements
-
-``` csharp
-    [UnityTest, Performance]
-    public IEnumerator Rendering_SampleScene()
-    {
-        using(Measure.Scope("LoadScene"))
-        {
-            // Add scene to Build Settings before running test 
-            SceneManager.LoadScene("SampleScene"); 
-        }
-        yield return null;
-
-        yield return Measure.Frames().Run();
     }
 ```
 

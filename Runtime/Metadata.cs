@@ -59,7 +59,7 @@ namespace Unity.PerformanceTesting
         /// <summary>
         /// Loads run from resources.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Performance run data loaded from resources.</returns>
         public static Run GetFromResources()
         {
             var run = ResourcesLoader.Load<Run>(Utils.TestRunInfo, Utils.PlayerPrefKeyRunJSON);

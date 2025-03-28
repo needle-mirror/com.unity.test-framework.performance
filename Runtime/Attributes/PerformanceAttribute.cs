@@ -24,7 +24,7 @@ namespace Unity.PerformanceTesting
         /// Executed before a test execution.
         /// </summary>
         /// <param name="test">Test to execute.</param>
-        /// <returns></returns>
+        /// <returns>Enumerable collection of actions to perform before test setup.</returns>
         public IEnumerator BeforeTest(ITest test)
         {
             if (RunSettings.Instance == null)
@@ -45,7 +45,7 @@ namespace Unity.PerformanceTesting
         /// Executed after a test execution.
         /// </summary>
         /// <param name="test">Executed test.</param>
-        /// <returns></returns>
+        /// <returns>Enumerable collection of actions to perform after test teardown.</returns>
         public IEnumerator AfterTest(ITest test)
         {
             PerformanceTest.EndTest(test);

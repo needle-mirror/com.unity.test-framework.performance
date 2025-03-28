@@ -1,7 +1,14 @@
 # Changelog
 
+## [3.1.0] - 2025-03-28
+### Added
+- Added an optional command-line argument "perfTestResults" to control the target location of performance test run results file.
+### Fixed
+- Warmup cycles no longer record GC measurements.
+- Setup and Cleanup cycles no longer contribute to GC measurements.
+
 ## [3.0.3] - 2023-09-11
-## Fixed 
+### Fixed 
 - Fixed issue where exception in OnTestEnded callback would result in EndTest method not finalising properly
 ### Changed
 - Temporarily removed "Open Script" from Performance Benchmark Window

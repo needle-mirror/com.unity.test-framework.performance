@@ -82,7 +82,7 @@ namespace Unity.PerformanceTesting
         /// Measures profiler markers for the given scope.
         /// </summary>
         /// <param name="profilerMarkerLabels">List of profiler marker names.</param>
-        /// <returns></returns>
+        /// <returns>A ProfilerMeasurement instance configured according to the given arguments.</returns>
         public static ProfilerMeasurement ProfilerMarkers(params string[] profilerMarkerLabels)
         {
             return new ProfilerMeasurement(profilerMarkerLabels);
@@ -92,7 +92,7 @@ namespace Unity.PerformanceTesting
         /// Measures profiler markers for the given scope.
         /// </summary>
         /// <param name="sampleGroups">List of SampleGroups where the name matches the profiler marker to measure.</param>
-        /// <returns></returns>
+        /// <returns>A ProfilerMeasurement instance configured according to the given arguments.</returns>
         public static ProfilerMeasurement ProfilerMarkers(params SampleGroup[] sampleGroups)
         {
             return new ProfilerMeasurement(sampleGroups);
@@ -101,7 +101,7 @@ namespace Unity.PerformanceTesting
         /// <summary>
         /// Measures execution time for a method with given parameters.
         /// </summary>
-        /// <param name="action"></param>
+        /// <param name="action">The action to be measured.</param>
         /// <returns><see cref="MethodMeasurement"/>using a builder pattern to provide parameters. Call <see cref="ScopeMeasurement.Run"/> to start measurement.</returns>
         public static MethodMeasurement Method(Action action)
         {
