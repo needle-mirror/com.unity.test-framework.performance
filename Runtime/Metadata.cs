@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Unity.PerformanceTesting.Data;
 using Unity.PerformanceTesting.Runtime;
 using UnityEngine;
@@ -30,7 +31,7 @@ namespace Unity.PerformanceTesting
                 SystemMemorySizeMB = SystemInfo.systemMemorySize
             };
         }
-    
+
         /// <summary>
         /// Sets player settings.
         /// </summary>
@@ -54,6 +55,9 @@ namespace Unity.PerformanceTesting
             run.Player.Development = Application.isEditor || Debug.isDebugBuild;
             run.Player.Platform = Application.platform.ToString();
             run.Player.GraphicsApi = SystemInfo.graphicsDeviceType.ToString();
+            run.Player.RenderThreadingMode = SystemInfo.renderingThreadingMode.ToString();
+            run.Player.MtRendering = SystemInfo.graphicsMultiThreaded;
+            run.Player.GraphicsJobs = SystemInfo.renderingThreadingMode.ToString().IndexOf("Job", StringComparison.InvariantCultureIgnoreCase) >= 0;
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
@@ -10,6 +10,9 @@ using System.Text;
 using Unity.PerformanceTesting.Data;
 using Unity.PerformanceTesting.Editor.UIElements;
 using Unity.PerformanceTesting.Runtime;
+#if UNITY_6000_2_OR_NEWER
+using TreeViewState = UnityEditor.IMGUI.Controls.TreeViewState<int>;
+#endif
 
 namespace Unity.PerformanceTesting.Editor
 {
@@ -358,7 +361,7 @@ namespace Unity.PerformanceTesting.Editor
 
             File.WriteAllText(path, sb.ToString());
         }
-        
+
         private void ClearResults()
         {
             File.Delete(GetResultsPath());
@@ -424,7 +427,7 @@ namespace Unity.PerformanceTesting.Editor
                         ? "New performance <b>data is available</b>. Click <b>\"Refresh\"</b> or <b>\"Auto Refresh\"</b> to view it"
                         : "No performance data found"
                 };
-                
+
                 var style = new GUIStyle(GUI.skin.GetStyle("HelpBox"))
                 {
                     richText = true,
@@ -457,7 +460,7 @@ namespace Unity.PerformanceTesting.Editor
             {
                 var profileDataFile = Path.Combine(Application.persistentDataPath,
                     Utils.RemoveIllegalCharacters(m_selectedTest) + ".raw");
-                
+
                 if (File.Exists(profileDataFile))
                 {
                     if (GUILayout.Button($"Load profiler data for test: {m_selectedTest}"))

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Unity.PerformanceTesting.Data;
 using Unity.PerformanceTesting.Runtime;
@@ -110,7 +110,7 @@ namespace Unity.PerformanceTesting.Measurements
             m_SampleGroupGC = new SampleGroup(name + ".GC()", SampleUnit.Undefined, false);
             return this;
         }
-        
+
         /// <summary>
         /// Overrides the default SampleGroup.
         /// </summary>
@@ -230,7 +230,7 @@ namespace Unity.PerformanceTesting.Measurements
             ValidateCorrectDynamicMeasurementCountUsage();
             SettingsOverride();
             var settingsCount = RunSettings.Instance.MeasurementCount;
-            
+
             if (m_MeasurementCount > 0 || settingsCount > -1)
             {
                 Warmup(m_WarmupCount);
@@ -260,7 +260,7 @@ namespace Unity.PerformanceTesting.Measurements
                 Debug.LogWarning("DynamicMeasurementCount will be ignored because MeasurementCount was specified.");
             }
         }
-        
+
         /// <summary>
         /// Overrides measurement count based on performance run settings
         /// </summary>

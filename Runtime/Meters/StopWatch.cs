@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 
 namespace Unity.PerformanceTesting.Meters
 {
@@ -8,7 +8,7 @@ namespace Unity.PerformanceTesting.Meters
     internal class StopWatch : IStopWatch
     {
         private readonly Stopwatch m_StopWatch = Stopwatch.StartNew();
-        
+
         public void Start()
         {
             m_StopWatch.Restart();

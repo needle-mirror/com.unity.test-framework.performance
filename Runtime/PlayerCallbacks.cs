@@ -20,7 +20,7 @@ namespace Unity.PerformanceTesting
         {
             // This method is empty because it's part of the NUnit framework's ITestListener interface,
             // which Unity uses for running tests in the Editor. It receives a parameter "testsToRun" but
-            // doesn't require implementation as Unity can execute tests without it. Developers can add 
+            // doesn't require implementation as Unity can execute tests without it. Developers can add
             // custom initialization logic if needed.
         }
 
@@ -38,9 +38,9 @@ namespace Unity.PerformanceTesting
 
         public void TestFinished(ITestResult result)
         {
-            // This method is called by Unity when a test has finished executing. It receives a parameter 
-            // "result" which contains information about the test execution, such as whether the test 
-            // passed or failed, and any messages or exceptions thrown during the test. Developers can 
+            // This method is called by Unity when a test has finished executing. It receives a parameter
+            // "result" which contains information about the test execution, such as whether the test
+            // passed or failed, and any messages or exceptions thrown during the test. Developers can
             // add custom logic in this method, such as logging or teardown code for the test.
         }
 

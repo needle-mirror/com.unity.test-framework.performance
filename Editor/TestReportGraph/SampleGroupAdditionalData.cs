@@ -1,4 +1,4 @@
-﻿namespace Unity.PerformanceTesting.Editor
+namespace Unity.PerformanceTesting.Editor
 {
     internal struct SampleGroupAdditionalData
     {

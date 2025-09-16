@@ -1,6 +1,6 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Unity.PerformanceTesting.Tests.Editor")]
 
-[assembly: AssemblyVersion("3.1.0")]
+[assembly: AssemblyVersion("3.2.0")]

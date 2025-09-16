@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.PerformanceTesting.Runtime;
 using UnityEngine;
 using Object = UnityEngine.Object;

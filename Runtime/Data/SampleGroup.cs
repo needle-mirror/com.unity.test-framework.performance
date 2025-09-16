@@ -56,7 +56,7 @@ namespace Unity.PerformanceTesting.Data
         /// Creates a sample group without initializing values.
         /// </summary>
         public SampleGroup(){}
-    
+
         /// <summary>
         /// Creates a sample group with provided arguments.
         /// </summary>
@@ -75,17 +75,17 @@ namespace Unity.PerformanceTesting.Data
                 throw new PerformanceTestException("Sample group name is empty. Please assign a valid name.");
             }
         }
-        
-        /// <summary>	
-        /// Validates the deserialized object.	
-        /// </summary>	
-        /// <param name="sender">The object that initiated the deserialization process.</param>	
-        public void OnDeserialization(object sender)	
-        {	
-            if (string.IsNullOrEmpty(Name))	
-            {	
-                throw new PerformanceTestException("Sample group name is empty. Please assign a valid name.");	
-            }	
+
+        /// <summary>
+        /// Validates the deserialized object.
+        /// </summary>
+        /// <param name="sender">The object that initiated the deserialization process.</param>
+        public void OnDeserialization(object sender)
+        {
+            if (string.IsNullOrEmpty(Name))
+            {
+                throw new PerformanceTestException("Sample group name is empty. Please assign a valid name.");
+            }
         }
     }
 }

@@ -71,7 +71,7 @@ namespace Unity.PerformanceTesting
                 throw new PerformanceTestException("Sample group name is empty. Please assign a valid name.");
             }
         }
-        
+
         internal Recorder Recorder;
 
         /// <summary>
@@ -82,17 +82,17 @@ namespace Unity.PerformanceTesting
         {
             return Recorder ?? (Recorder = Recorder.Get(Name));
         }
-        
-        /// <summary>	
-        /// Validates the deserialized object.	
-        /// </summary>	
-        /// <param name="sender">The object that initiated the deserialization process.</param>	
-        public void OnDeserialization(object sender)	
-        {	
-            if (string.IsNullOrEmpty(Name))	
-            {	
-                throw new PerformanceTestException("Sample group name is empty. Please assign a valid name.");	
-            }	
+
+        /// <summary>
+        /// Validates the deserialized object.
+        /// </summary>
+        /// <param name="sender">The object that initiated the deserialization process.</param>
+        public void OnDeserialization(object sender)
+        {
+            if (string.IsNullOrEmpty(Name))
+            {
+                throw new PerformanceTestException("Sample group name is empty. Please assign a valid name.");
+            }
         }
     }
 }

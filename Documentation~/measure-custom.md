@@ -1,6 +1,7 @@
 # Measure.Custom()
 
-When you want to record samples outside of frame time, method time, or profiler markers, use a custom measurement. It can be any value.
+When you want to record samples outside of frame time, method time, or profiler markers, use a custom measurement. It
+can be any value.
 
 #### Example: Use a custom measurement to capture total allocated memory
 

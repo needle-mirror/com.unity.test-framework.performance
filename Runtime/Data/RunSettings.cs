@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.Serialization;
 using Unity.PerformanceTesting.Runtime;
 
@@ -19,7 +19,7 @@ namespace Unity.PerformanceTesting.Data
                 MeasurementCount = measurementMultiplier;
             }
         }
-        
+
         private static RunSettings m_Instance;
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace Unity.PerformanceTesting.Data
                 {
                     m_Instance = ResourcesLoader.Load<RunSettings>(Utils.RunSettings, Utils.PlayerPrefKeySettingsJSON);
                 }
-                
+
                 return m_Instance;
             }
             set { m_Instance = value; }
@@ -43,17 +43,17 @@ namespace Unity.PerformanceTesting.Data
         /// Measurement counts will be overriden by specified value when using Measure.Method and Measure.Frames.
         /// </summary>
         public int MeasurementCount = -1;
-        
-        /// <summary>	
-        /// Validates the deserialized object.	
-        /// </summary>	
-        /// <param name="sender">The object that initiated the deserialization process.</param>	
-        public void OnDeserialization(object sender)	
-        {	
-            if (MeasurementCount < -1)	
-            {	
-                throw new SerializationException("MeasurementCount cannot be negative, except for the initial value of -1.");	
-            }	
+
+        /// <summary>
+        /// Validates the deserialized object.
+        /// </summary>
+        /// <param name="sender">The object that initiated the deserialization process.</param>
+        public void OnDeserialization(object sender)
+        {
+            if (MeasurementCount < -1)
+            {
+                throw new SerializationException("MeasurementCount cannot be negative, except for the initial value of -1.");
+            }
         }
     }
 }

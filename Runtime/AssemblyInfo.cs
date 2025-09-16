@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: AssemblyTitle("Unity.PerformanceTesting")]
@@ -7,4 +7,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.PerformanceTesting.Tests.Runtime")]
 [assembly: InternalsVisibleTo("Unity.GraphTools.Foundation.Testing.Editor")]
 
-[assembly: AssemblyVersion("3.1.0")]
+[assembly: AssemblyVersion("3.2.0")]

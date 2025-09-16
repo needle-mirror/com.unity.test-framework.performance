@@ -27,7 +27,7 @@ namespace Unity.PerformanceTesting.Editor
                 {
                     return;
                 }
-                
+
                 Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "Saving performance results to: {0}", resultsLocation);
                 var jsonContents = JsonUtility.ToJson(performanceTestRun, true);
                 CreateDirectoryIfNecessary(resultsLocation);

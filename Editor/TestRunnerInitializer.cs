@@ -12,8 +12,8 @@ namespace Unity.PerformanceTesting.Editor
         static TestRunnerInitializer()
         {
             var args = GetCmdLineArguments();
-            var resultsHandler = args.IsCmdLineRun && !string.IsNullOrEmpty(args.PerfTestResults) 
-                ? CreateCmdLineResultsHandler(args) 
+            var resultsHandler = args.IsCmdLineRun && !string.IsNullOrEmpty(args.PerfTestResults)
+                ? CreateCmdLineResultsHandler(args)
                 : ScriptableObject.CreateInstance<PerformanceTestRunSaver>();
 
             var api = ScriptableObject.CreateInstance<TestRunnerApi>();
@@ -31,7 +31,7 @@ namespace Unity.PerformanceTesting.Editor
         {
             var isCmdLineTestRun = false;
             string resultFilePath = null;
-            
+
             var optionSet = new CommandLineOptionSet(
                 new CommandLineOption("runTests", () => { isCmdLineTestRun = true; }),
                 new CommandLineOption("runEditorTests", () => { isCmdLineTestRun = true; }),

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -80,7 +80,7 @@ namespace Unity.PerformanceTesting
                 : currentTest.Name;
 
             string className = currentTest.ClassName;
-            
+
             var fullName = currentTest.MethodName != methodName ? $"{currentTest.ClassName}.{currentTest.MethodName}.{currentTest.Name}" : currentTest.FullName;
 
             var test = new PerformanceTest
@@ -143,7 +143,7 @@ namespace Unity.PerformanceTesting
                 PerformCleanupAndFinalization();
             }
         }
-        
+
         internal static void PerformCleanupAndFinalization()
         {
             Active.LogOutput(); // Log test output
@@ -240,7 +240,7 @@ namespace Unity.PerformanceTesting
             }
             AppendVisualization(sb, s_Buckets, s_Buckets.Length, 0, maxInOneBucket);
         }
-        
+
         /// <summary>
         /// Returns performance test in a readable format.
         /// </summary>

@@ -13,12 +13,12 @@ namespace Unity.PerformanceTesting.Data
         /// Full test name.
         /// </summary>
         [RequiredMember] public string Name;
-        
+
         /// <summary>
         /// Test script name.
         /// </summary>
         [RequiredMember] public string ClassName;
-        
+
         /// <summary>
         /// Test method name.
         /// </summary>

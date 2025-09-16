@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -6,6 +6,11 @@ using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Unity.PerformanceTesting.Data;
+#if UNITY_6000_2_OR_NEWER
+using TreeView = UnityEditor.IMGUI.Controls.TreeView<int>;
+using TreeViewItem = UnityEditor.IMGUI.Controls.TreeViewItem<int>;
+using TreeViewState = UnityEditor.IMGUI.Controls.TreeViewState<int>;
+#endif
 
 namespace Unity.PerformanceTesting.Editor
 {
@@ -118,12 +123,12 @@ namespace Unity.PerformanceTesting.Editor
             var results = m_testReportWindow.GetResults();
             var searchText = m_testReportWindow.searchString?.ToLower();
             var methodItemId = 0;
-        
+
             if (results == null) return root;
-            
+
             var classItemId = results.Results.Count(); // Class ID will always be bigger than the count of results (from methods) we get
             var classGroups = results.Results.GroupBy(r => r.ClassName);
-        
+
             foreach (var classGroup in classGroups)
             {
                 var classItem = new TestListTableItem(classItemId++, 0, classGroup.Key, null);
@@ -133,7 +138,7 @@ namespace Unity.PerformanceTesting.Editor
                 // Currently Name provides both MethodName and Test parameter - example would be - ValueSource(Cube)
                 // We are using Name and simply removing the ClassPart as we need to keep that parameter
                 var methodItems = classGroup
-                    .Select(r => 
+                    .Select(r =>
                     {
                         // Calculate the starting index for the substring to extract methodname from full name
                         int startIndex = r.Name.IndexOf(classGroup.Key, StringComparison.Ordinal) + classGroup.Key.Length + 1;
@@ -145,7 +150,7 @@ namespace Unity.PerformanceTesting.Editor
                         // Create a TestListTableItem using the extracted methodName and other parameters
                         return new TestListTableItem(methodItemId++, 1, methodName, r);
                     });
-                
+
                 foreach (var methodItem in methodItems)
                 {
                     var matchesSearchText = string.IsNullOrEmpty(searchText) ||
@@ -156,7 +161,7 @@ namespace Unity.PerformanceTesting.Editor
 
             // Remove class items with no children
             root.children?.RemoveAll(c => !c.hasChildren);
-        
+
             return root;
         }
 
@@ -178,7 +183,7 @@ namespace Unity.PerformanceTesting.Editor
         {
             SortIfNeeded(GetRows());
         }
-        
+
         void SortIfNeeded(IList<TreeViewItem> rows)
         {
             if (rows.Count <= 1)
@@ -211,7 +216,7 @@ namespace Unity.PerformanceTesting.Editor
             }
 
             var classItems = rootItem.children;
-            
+
             foreach (var classItem in classItems)
             {
                 var myTypes = classItem.children.Cast<TestListTableItem>();
@@ -246,7 +251,7 @@ namespace Unity.PerformanceTesting.Editor
                             break;
                     }
                 }
-                
+
                 classItem.children = orderedQuery.Cast<TreeViewItem>().ToList();
             }
         }
@@ -291,7 +296,7 @@ namespace Unity.PerformanceTesting.Editor
             {
                 EditorGUI.LabelField(nameRect, item.displayName);
             }
-            
+
             if (item.depth == 1)
             {
                 for (var i = 0; i < args.GetNumVisibleColumns(); ++i)

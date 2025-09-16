@@ -67,7 +67,7 @@ namespace Unity.PerformanceTesting
         {
             return new ScopeMeasurement(name);
         }
-        
+
         /// <summary>
         /// Measures execution time for the given scope as a single time.
         /// </summary>
@@ -87,7 +87,7 @@ namespace Unity.PerformanceTesting
         {
             return new ProfilerMeasurement(profilerMarkerLabels);
         }
-        
+
         /// <summary>
         /// Measures profiler markers for the given scope.
         /// </summary>

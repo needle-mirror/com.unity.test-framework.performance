@@ -11,7 +11,7 @@ namespace Unity.PerformanceTesting.Statistics
         /// Do not remove outliers.
         /// </summary>
         DontRemove,
-            
+
         /// <summary>
         /// Remove outliers using the Tukey fences method.
         /// </summary>

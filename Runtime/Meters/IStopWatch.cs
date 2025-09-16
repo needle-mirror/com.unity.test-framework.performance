@@ -1,4 +1,4 @@
-﻿namespace Unity.PerformanceTesting.Meters
+namespace Unity.PerformanceTesting.Meters
 {
     /// <summary>
     /// Provides stopwatch functionality for measuring time

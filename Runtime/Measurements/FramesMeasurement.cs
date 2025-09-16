@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Diagnostics;
 using Unity.PerformanceTesting.Data;
@@ -34,7 +34,7 @@ namespace Unity.PerformanceTesting.Measurements
         private int m_Executions;
         private int m_Warmup = -1;
         private bool m_RecordFrametime = true;
-        
+
         /// <summary>
         /// Records provided profiler markers once per frame.
         /// </summary>
@@ -64,7 +64,7 @@ namespace Unity.PerformanceTesting.Measurements
         /// <returns>An updated instance of the FramesMeasurement to be used in fluent syntax.</returns>
         public FramesMeasurement SampleGroup(string name)
         {
-            m_SampleGroup.Name = name; 
+            m_SampleGroup.Name = name;
             return this;
         }
 
@@ -154,7 +154,7 @@ namespace Unity.PerformanceTesting.Measurements
         {
             return new ScopedFrameTimeMeasurement(name);
         }
-        
+
         /// <summary>
         /// Switches frame time measurement to asynchronous scope measurement.
         /// </summary>
@@ -164,7 +164,7 @@ namespace Unity.PerformanceTesting.Measurements
         {
             return new ScopedFrameTimeMeasurement(sampleGroup);
         }
-        
+
         /// <summary>
         /// Executes the frame time measurement with given parameters. When MeasurementCount is not provided, a probing method will run to determine desired measurement counts.
         /// </summary>
@@ -174,7 +174,7 @@ namespace Unity.PerformanceTesting.Measurements
             ValidateCorrectDynamicMeasurementCountUsage();
 
             if (!ValidateMeasurementAndWarmupCount()) yield break;
-            
+
             SettingsOverride();
 
             yield return m_Warmup > -1 ? WaitFor(m_Warmup) : GetDesiredIterationCount();
@@ -199,7 +199,7 @@ namespace Unity.PerformanceTesting.Measurements
                 }
             }
         }
-        
+
         private IEnumerator RunDynamicMeasurementCount()
         {
             while (true)
@@ -350,7 +350,7 @@ namespace Unity.PerformanceTesting.Measurements
                 m_Test.SampleGroup = sampleGroup;
                 PerformanceTest.Disposables.Add(this);
             }
-            
+
             /// <summary>
             /// Initializes a scoped frame time measurement.
             /// </summary>

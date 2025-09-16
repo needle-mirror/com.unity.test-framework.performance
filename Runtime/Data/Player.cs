@@ -54,6 +54,16 @@ namespace Unity.PerformanceTesting.Data
         [RequiredMember] public string RenderThreadingMode;
 
         /// <summary>
+        /// Whether the render threading mode is multithreaded or not.
+        /// </summary>
+        [RequiredMember] public bool MtRendering;
+
+        /// <summary>
+        /// Whether the render threading mode uses Graphics Jobs or not.
+        /// </summary>
+        [RequiredMember] public bool GraphicsJobs;
+
+        /// <summary>
         /// Whether GPU skinning is enabled or not.
         /// </summary>
         [RequiredMember] public bool GpuSkinning;

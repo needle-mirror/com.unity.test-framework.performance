@@ -36,7 +36,7 @@ namespace Unity.PerformanceTesting.Editor
             var settings = new RunSettings(Environment.GetCommandLineArgs());
             SaveToStorage(settings, Utils.RunSettingsPath);
         }
-        
+
         public void OnPostprocessBuild(BuildReport report)
         {
             Cleanup();
@@ -100,7 +100,7 @@ namespace Unity.PerformanceTesting.Editor
             if (File.Exists(path)) { File.Delete(path); }
             var metaPath = path + ".meta";
             if (File.Exists(metaPath)) { File.Delete(metaPath); }
-        } 
+        }
 
         private static Data.Editor GetEditorInfo()
         {
@@ -138,11 +138,11 @@ namespace Unity.PerformanceTesting.Editor
             #if UNITY_2021_2_OR_NEWER
             run.Player.ScriptingBackend = PlayerSettings
                 .GetScriptingBackend(NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup)).ToString();
-            #else 
+            #else
             run.Player.ScriptingBackend = PlayerSettings
                 .GetScriptingBackend(EditorUserBuildSettings.selectedBuildTargetGroup).ToString();
             #endif
-            run.Player.RenderThreadingMode = PlayerSettings.graphicsJobs ? "GraphicsJobs" :
+            run.Player.RenderThreadingMode = PlayerSettings.graphicsJobs ? PlayerSettings.graphicsJobMode.ToString() :
                 PlayerSettings.MTRendering ? "MultiThreaded" : "SingleThreaded";
             run.Player.AndroidTargetSdkVersion = PlayerSettings.Android.targetSdkVersion.ToString();
             run.Player.AndroidBuildSystem = EditorUserBuildSettings.androidBuildSystem.ToString();

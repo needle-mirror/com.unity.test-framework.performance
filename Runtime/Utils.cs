@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Unity.PerformanceTesting.Exceptions;
@@ -209,13 +209,13 @@ namespace Unity.PerformanceTesting.Runtime
 
             return null;
         }
-        
+
         internal static int ToInt(this string s)
         {
             if (int.TryParse(s, out var i)) return i;
             return -1;
         }
-        
+
         internal static SampleGroup[] CreateSampleGroupsFromMarkerNames(params string[] profilerMarkerNames)
         {
             if (profilerMarkerNames == null) return new List<SampleGroup>().ToArray();

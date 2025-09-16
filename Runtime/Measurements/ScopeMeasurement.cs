@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using Unity.PerformanceTesting.Runtime;
 
@@ -45,7 +45,7 @@ namespace Unity.PerformanceTesting.Measurements
             var elapsedTicks = Stopwatch.GetTimestamp() - m_StartTicks;
             PerformanceTest.Disposables.Remove(this);
             var delta = TimeSpan.FromTicks(elapsedTicks).TotalMilliseconds;
-            
+
             delta = Utils.ConvertSample(SampleUnit.Millisecond, m_SampleGroup.Unit, delta);
 
             Measure.Custom(m_SampleGroup, delta);
