@@ -23,7 +23,7 @@ public void Vector2_operations()
 }
 ```
 
-To view the results, go to **Window > Analysis > Performance Test Report**.
+To view the results, go to **Window > General > Performance Test Report**.
 
 ![Performance test example01](images/example01.png)
 

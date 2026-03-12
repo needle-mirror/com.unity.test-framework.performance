@@ -10,7 +10,7 @@ namespace Unity.PerformanceTesting.Measurements
     /// </summary>
     public struct ProfilerMeasurement : IDisposable
     {
-        private readonly ProfilerMarkerMeasurement m_Test;
+        private readonly ProfilerMeasurementBehaviour m_Test;
 
         /// <summary>
         /// Initializes a profiler marker measurement.
@@ -33,7 +33,7 @@ namespace Unity.PerformanceTesting.Measurements
             var go = new GameObject("Recorder");
             if (Application.isPlaying) Object.DontDestroyOnLoad(go);
             go.hideFlags = HideFlags.HideAndDontSave;
-            m_Test = go.AddComponent<ProfilerMarkerMeasurement>();
+            m_Test = go.AddComponent<ProfilerMeasurementBehaviour>();
             m_Test.AddProfilerSampleGroup(sampleGroups);
             PerformanceTest.Disposables.Add(this);
         }

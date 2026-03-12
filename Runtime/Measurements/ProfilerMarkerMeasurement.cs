@@ -1,59 +1,102 @@
+using System;
 using System.Collections.Generic;
 using Unity.PerformanceTesting.Runtime;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Unity.PerformanceTesting.Measurements
 {
-    internal class ProfilerMarkerMeasurement : MonoBehaviour
+    class ProfilerMarkerMeasurement : IDisposable
     {
-        private bool m_MeasurementStarted;
+        private readonly bool m_AverageSampleMeasurement;
+        bool m_DisposedValue;
 
-        private readonly List<SampleGroup> m_SampleGroups = new List<SampleGroup>();
+        protected struct RecordedSampleGroup
+        {
+            public SampleGroup SampleGroup;
+            public ProfilerRecorder ProfilerRecorder;
+        }
 
-        public void AddProfilerSampleGroup(IEnumerable<SampleGroup> sampleGroups)
+        protected readonly List<RecordedSampleGroup> m_SampleGroups = new List<RecordedSampleGroup>();
+
+        public ProfilerMarkerMeasurement(bool averageSampleMeasurement)
+        {
+            m_AverageSampleMeasurement = averageSampleMeasurement;
+        }
+
+        public void AddAndEnableProfilerSampleGroup(IEnumerable<SampleGroup> sampleGroups)
         {
             foreach (var sampleGroup in sampleGroups)
             {
-                AddProfilerSample(sampleGroup);
+                AddAndEnableProfilerSample(sampleGroup);
             }
         }
 
-        private void AddProfilerSample(SampleGroup sampleGroup)
+        public void AddAndEnableProfilerSample(SampleGroup sampleGroup)
         {
-            sampleGroup.GetRecorder();
-            sampleGroup.Recorder.enabled = true;
-            m_SampleGroups.Add(sampleGroup);
+            var recorder = new ProfilerRecorder(sampleGroup.Name, 1, ProfilerRecorderOptions.WrapAroundWhenCapacityReached | ProfilerRecorderOptions.SumAllSamplesInFrame);
+            // Start recorder immediately
+            recorder.Start();
+            m_SampleGroups.Add(new RecordedSampleGroup { SampleGroup = sampleGroup, ProfilerRecorder = recorder });
         }
 
-        private void SampleProfilerSamples()
-        {
-            foreach (var sampleGroup in m_SampleGroups)
-            {
-                var delta = Utils.ConvertSample(SampleUnit.Nanosecond, sampleGroup.Unit, sampleGroup.Recorder.elapsedNanoseconds);
-                Measure.Custom(sampleGroup, delta);
-            }
-        }
-
-        public void StopAndSampleRecorders()
+        public void SampleProfilerSamples(bool stopRecorders = false)
         {
             foreach (var sampleGroup in m_SampleGroups)
             {
-                sampleGroup.Recorder.enabled = false;
-                var delta = Utils.ConvertSample(SampleUnit.Nanosecond, sampleGroup.Unit, sampleGroup.Recorder.elapsedNanoseconds);
-                Measure.Custom(sampleGroup, delta);
+                // Validate that the recorder is attached to a valid marker
+                if (!sampleGroup.ProfilerRecorder.Valid)
+                {
+                    Debug.LogAssertion($"ProfilerMarker measurement is attached to invalid marker \"{sampleGroup.SampleGroup.Name}\"! Ensure the marker is created at the time of the measurement");
+                    continue;
+                }
+
+                if (stopRecorders)
+                    sampleGroup.ProfilerRecorder.Stop();
+
+                var delta = 0.0;
+
+                // Record the last recorded value if present, otherwise use 0.
+                if (sampleGroup.ProfilerRecorder.Count > 0 && sampleGroup.ProfilerRecorder.GetSample(0).Count > 0)
+                {
+                    var sampleCount = m_AverageSampleMeasurement ? sampleGroup.ProfilerRecorder.GetSample(0).Count : 1;
+                    if (sampleCount > 0)
+                    {
+                        var totalTimeNs = sampleGroup.ProfilerRecorder.GetSample(0).Value / sampleCount;
+                        delta = Utils.ConvertSample(SampleUnit.Nanosecond, sampleGroup.SampleGroup.Unit, totalTimeNs);
+                    }
+                }
+
+                Measure.Custom(sampleGroup.SampleGroup, delta);
             }
         }
 
-        public void Update()
+        public void StopAndSampleRecorders() => SampleProfilerSamples(true);
+
+        protected virtual void Dispose(bool disposing)
         {
-            if (!m_MeasurementStarted)
+            if (m_DisposedValue)
+                return;
+
+            foreach (var sampleGroup in m_SampleGroups)
             {
-                m_MeasurementStarted = true;
+                sampleGroup.ProfilerRecorder.Dispose();
             }
-            else
-            {
-                SampleProfilerSamples();
-            }
+
+            m_DisposedValue = true;
+        }
+
+        ~ProfilerMarkerMeasurement()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -78,6 +78,8 @@ namespace Unity.PerformanceTesting
         /// Gets the profiler recorder object.
         /// </summary>
         /// <returns>Profiler recorder.</returns>
+        /// <remarks>This method is obsolete and will be removed in a future version. The recorder is automatically created by <see cref="Unity.PerformanceTesting.Measurements.MethodMeasurement"/> when needed.</remarks>
+        [Obsolete("GetRecorder is obsolete and will be removed in a future version. The recorder is automatically created by MethodMeasurement when needed.")]
         public Recorder GetRecorder()
         {
             return Recorder ?? (Recorder = Recorder.Get(Name));

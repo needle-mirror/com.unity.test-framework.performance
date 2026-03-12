@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.2.1] - 2026-03-12
+
+### Fixed
+
+- Only call AssetDatabase.Refresh() in Cleanup() when something actually got deleted [BUTFP-29](https://issuetracker.unity3d.com/product/unity/issues/guid/BUTFP-29)
+- Avoid boxing from enum.Equals in ConvertSamples.
+- Prevent unnecessary asset recompilation by skipping result writing when the content is unchanged.
+
+### Changed
+
+- Added assert when sample is measured for a non-existing ProfilerMarker.
+- Use ProfilerRecorder API to measure profiler markers.
+- Updated GC.Alloc measurements (GC() function of Measure.Method) to collect allocation count on the running thread only.
+- SampleGroup.GetRecorder is now marked as [Obsolete] and will be removed in a future update.
+
 ## [3.2.0] - 2025-09-16
 
 ### Added

@@ -1,12 +1,11 @@
 using System;
-using System.Collections.Generic;
 using Unity.PerformanceTesting.Data;
-using Unity.PerformanceTesting.Runtime;
 using Unity.PerformanceTesting.Exceptions;
 using Unity.PerformanceTesting.Meters;
+using Unity.PerformanceTesting.Runtime;
 using Unity.PerformanceTesting.Statistics;
+using Unity.Profiling;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace Unity.PerformanceTesting.Measurements
 {
@@ -25,8 +24,8 @@ namespace Unity.PerformanceTesting.Measurements
         private const ConfidenceLevel k_DefaultConfidenceLevel = ConfidenceLevel.L99;
         private const OutlierMode k_DefaultOutlierMode = OutlierMode.Remove;
         private readonly Action m_Action;
-        private readonly List<SampleGroup> m_SampleGroups = new List<SampleGroup>();
-        private readonly Recorder m_GCRecorder;
+        private ProfilerMarkerMeasurement m_ProfilerMarkerMeasurement = new ProfilerMarkerMeasurement(averageSampleMeasurement: true);
+        private ProfilerRecorder m_GCRecorder;
 
         private Action m_Setup;
         private Action m_Cleanup;
@@ -40,7 +39,6 @@ namespace Unity.PerformanceTesting.Measurements
         private OutlierMode m_OutlierMode = k_DefaultOutlierMode;
         private int m_IterationCount = 1;
         private bool m_GC;
-        private double m_GCAccumulation;
         private IStopWatch m_Watch;
 
         /// <summary>
@@ -50,8 +48,6 @@ namespace Unity.PerformanceTesting.Measurements
         public MethodMeasurement(Action action)
         {
             m_Action = action;
-            m_GCRecorder = Recorder.Get("GC.Alloc");
-            m_GCRecorder.enabled = false;
             if (m_Watch == null) m_Watch = new StopWatch();
         }
 
@@ -69,13 +65,13 @@ namespace Unity.PerformanceTesting.Measurements
         /// <returns>An updated instance of the MethodMeasurement to be used in fluent syntax.</returns>
         public MethodMeasurement ProfilerMarkers(params string[] profilerMarkerNames)
         {
-            if (profilerMarkerNames == null) return this;
+            if (profilerMarkerNames == null)
+                return this;
+
             foreach (var marker in profilerMarkerNames)
             {
                 var sampleGroup = new SampleGroup(marker, SampleUnit.Nanosecond, false);
-                sampleGroup.GetRecorder();
-                sampleGroup.Recorder.enabled = false;
-                m_SampleGroups.Add(sampleGroup);
+                m_ProfilerMarkerMeasurement.AddAndEnableProfilerSample(sampleGroup);
             }
 
             return this;
@@ -88,13 +84,10 @@ namespace Unity.PerformanceTesting.Measurements
         /// <returns>An updated instance of the MethodMeasurement to be used in fluent syntax.</returns>
         public MethodMeasurement ProfilerMarkers(params SampleGroup[] sampleGroups)
         {
-            if (sampleGroups == null){ return this;}
-            foreach (var sampleGroup in sampleGroups)
-            {
-                sampleGroup.GetRecorder();
-                sampleGroup.Recorder.enabled = false;
-                m_SampleGroups.Add(sampleGroup);
-            }
+            if (sampleGroups == null)
+                return this;
+
+            m_ProfilerMarkerMeasurement.AddAndEnableProfilerSampleGroup(sampleGroups);
 
             return this;
         }
@@ -213,12 +206,21 @@ namespace Unity.PerformanceTesting.Measurements
         }
 
         /// <summary>
-        /// Enables recording of garbage collector calls.
+        /// Enables recording of garbage collector calls as additional sample group with ".GC()" postfix.
         /// </summary>
         /// <returns>An updated instance of the MethodMeasurement to be used in fluent syntax.</returns>
         public MethodMeasurement GC()
         {
-            m_GC = true;
+            if (!m_GC)
+            {
+                // Create the GC Alloc recorder
+                m_GCRecorder = new ProfilerRecorder(ProfilerCategory.Memory, "GC.Alloc", 1,
+                    ProfilerRecorderOptions.WrapAroundWhenCapacityReached | ProfilerRecorderOptions.SumAllSamplesInFrame | ProfilerRecorderOptions.CollectOnlyOnCurrentThread);
+                Debug.Assert(m_GCRecorder.Valid, "GC.Alloc ProfilerRecorder must be valid for the GC measurements");
+
+                m_GC = true;
+            }
+
             return this;
         }
 
@@ -233,6 +235,23 @@ namespace Unity.PerformanceTesting.Measurements
 
             if (m_MeasurementCount > 0 || settingsCount > -1)
             {
+                // Allocate sample groups up front to minimize GC allocations during/between tests
+                if (m_GC)
+                {
+                    m_SampleGroupGC.Samples.Capacity = m_MeasurementCount;
+                    var sampleGroupGC = PerformanceTest.GetSampleGroup(m_SampleGroupGC.Name);
+                    if (sampleGroupGC == null)
+                    {
+                        PerformanceTest.AddSampleGroup(m_SampleGroupGC);
+                    }
+                }
+                m_SampleGroup.Samples.Capacity = m_MeasurementCount;
+                var sampleGroup = PerformanceTest.GetSampleGroup(m_SampleGroup.Name);
+                if (sampleGroup == null)
+                {
+                    PerformanceTest.AddSampleGroup(m_SampleGroup);
+                }
+
                 Warmup(m_WarmupCount);
                 RunForIterations(m_IterationCount, m_MeasurementCount, useAverage: false);
                 return;
@@ -275,7 +294,6 @@ namespace Unity.PerformanceTesting.Measurements
 
         private void RunForIterations(int iterations, int measurements, bool useAverage)
         {
-            EnableMarkers();
             for (var j = 0; j < measurements; j++)
             {
                 var executionTime = iterations == 1 ? ExecuteSingleIteration() : ExecuteForIterations(iterations);
@@ -289,8 +307,6 @@ namespace Unity.PerformanceTesting.Measurements
 
         private void RunForIterations(int iterations)
         {
-            EnableMarkers();
-
             while(true)
             {
                 var executionTime = iterations == 1 ? ExecuteSingleIteration() : ExecuteForIterations(iterations);
@@ -304,25 +320,13 @@ namespace Unity.PerformanceTesting.Measurements
             DisableAndMeasureMarkers();
         }
 
-        private void EnableMarkers()
-        {
-            foreach (var sampleGroup in m_SampleGroups)
-            {
-                sampleGroup.Recorder.enabled = true;
-            }
-        }
-
         private void DisableAndMeasureMarkers()
         {
-            foreach (var sampleGroup in m_SampleGroups)
-            {
-                sampleGroup.Recorder.enabled = false;
-                var sample = sampleGroup.Recorder.elapsedNanoseconds;
-                var blockCount = sampleGroup.Recorder.sampleBlockCount;
-                if(blockCount == 0) continue;
-                var delta = Utils.ConvertSample(SampleUnit.Nanosecond, sampleGroup.Unit, sample);
-                Measure.Custom(sampleGroup, delta / blockCount);
-            }
+            m_ProfilerMarkerMeasurement.SampleProfilerSamples(stopRecorders: true);
+            m_ProfilerMarkerMeasurement.Dispose();
+            m_ProfilerMarkerMeasurement = null;
+
+            m_GCRecorder.Dispose();
         }
 
         private bool SampleCountFulfillsRequirements()
@@ -398,13 +402,15 @@ namespace Unity.PerformanceTesting.Measurements
         private double ExecuteActionWithCleanupSetup()
         {
             m_Setup?.Invoke();
-            if (m_GC) StartGCRecorder();
+            if (m_GC)
+                StartGCRecorder();
 
             var executionTime = m_Watch.Split();
             m_Action.Invoke();
             executionTime = m_Watch.Split() - executionTime;
 
-            if (m_GC) AccumulateGCRecorder();
+            if (m_GC)
+                StopGCRecorder();
             m_Cleanup?.Invoke();
 
             return executionTime;
@@ -413,13 +419,15 @@ namespace Unity.PerformanceTesting.Measurements
         private double ExecuteSingleIteration()
         {
             m_Setup?.Invoke();
-            if (m_GC) StartGCRecorder();
+            if (m_GC)
+                StartGCRecorder();
 
             var executionTime = m_Watch.Split();
             m_Action.Invoke();
             executionTime = m_Watch.Split() - executionTime;
 
-            if (m_GC) EndGCRecorderAndMeasure(1);
+            if (m_GC)
+                EndGCRecorderAndMeasure(1);
             m_Cleanup?.Invoke();
 
             return executionTime;
@@ -436,11 +444,13 @@ namespace Unity.PerformanceTesting.Measurements
                     executionTime += ExecuteActionWithCleanupSetup();
                 }
 
-                if (m_GC) EndAccumulatedGCRecorder(iterations);
+                if (m_GC)
+                    EndGCRecorderAndMeasure(iterations);
             }
             else
             {
-                if (m_GC) StartGCRecorder();
+                if (m_GC)
+                    StartGCRecorder();
 
                 executionTime = m_Watch.Split();
                 for (var i = 0; i < iterations; i++)
@@ -450,7 +460,8 @@ namespace Unity.PerformanceTesting.Measurements
 
                 executionTime = m_Watch.Split() - executionTime;
 
-                if (m_GC) EndGCRecorderAndMeasure(iterations);
+                if (m_GC)
+                    EndGCRecorderAndMeasure(iterations);
             }
 
             return executionTime;
@@ -458,29 +469,21 @@ namespace Unity.PerformanceTesting.Measurements
 
         private void StartGCRecorder()
         {
-            System.GC.Collect();
-
-            m_GCRecorder.enabled = false;
-            m_GCRecorder.enabled = true;
+            m_GCRecorder.Start();
         }
 
-        private void AccumulateGCRecorder()
+        private void StopGCRecorder()
         {
-            m_GCRecorder.enabled = false;
-            m_GCAccumulation += m_GCRecorder.sampleBlockCount;
-        }
-
-        private void EndAccumulatedGCRecorder(int iterations)
-        {
-            m_GCRecorder.enabled = false;
-            Measure.Custom(m_SampleGroupGC, m_GCAccumulation / iterations);
-            m_GCAccumulation = 0;
+            m_GCRecorder.Stop();
         }
 
         private void EndGCRecorderAndMeasure(int iterations)
         {
-            m_GCRecorder.enabled = false;
-            Measure.Custom(m_SampleGroupGC, (double) m_GCRecorder.sampleBlockCount / iterations);
+            m_GCRecorder.Stop();
+            var gcAllocCount = m_GCRecorder.Count > 0 ? m_GCRecorder.GetSample(0).Count : 0;
+            Measure.Custom(m_SampleGroupGC, gcAllocCount / iterations);
+
+            m_GCRecorder.Reset();
         }
     }
 }

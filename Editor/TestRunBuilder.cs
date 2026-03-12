@@ -83,23 +83,50 @@ namespace Unity.PerformanceTesting.Editor
 
         public void Cleanup()
         {
-            DeleteFileAndMeta(Utils.TestRunPath);
-            DeleteFileAndMeta(Utils.RunSettingsPath);
+            bool modifiedAssets = false;
 
-            if (EditorPrefs.GetBool(cleanResources) && Directory.Exists("Assets/Resources"))
+            if (DeleteFileAndMeta(Utils.TestRunPath))
             {
-                Directory.Delete("Assets/Resources/", true);
-                if(File.Exists("Assets/Resources.meta")) {File.Delete("Assets/Resources.meta");}
+                modifiedAssets = true;
             }
 
-            AssetDatabase.Refresh();
+            if (DeleteFileAndMeta(Utils.RunSettingsPath))
+            {
+                modifiedAssets = true;
+            }
+
+            if (EditorPrefs.GetBool(cleanResources) && Directory.Exists(Utils.ResourcesPath))
+            {
+                Directory.Delete(Utils.ResourcesPath, true);
+                if(File.Exists(Utils.ResourcesPath + ".meta")) {File.Delete(Utils.ResourcesPath + ".meta");}
+                modifiedAssets = true;
+            }
+
+            // Only refresh the AssetDatabase if we actually deleted performance test files
+            if (modifiedAssets)
+            {
+                AssetDatabase.Refresh();
+            }
         }
 
-        private void DeleteFileAndMeta(string path)
+        private bool DeleteFileAndMeta(string path)
         {
-            if (File.Exists(path)) { File.Delete(path); }
+            bool deletedAny = false;
+
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+                deletedAny = true;
+            }
+
             var metaPath = path + ".meta";
-            if (File.Exists(metaPath)) { File.Delete(metaPath); }
+            if (File.Exists(metaPath))
+            {
+                File.Delete(metaPath);
+                deletedAny = true;
+            }
+
+            return deletedAny;
         }
 
         private static Data.Editor GetEditorInfo()
@@ -194,6 +221,14 @@ namespace Unity.PerformanceTesting.Editor
         private string SaveToStorage(object obj, string path)
         {
             var json = JsonUtility.ToJson(obj);
+            if (File.Exists(path))
+            {
+                // Prevents unnecessary asset recompilation by skipping the write when the content is unchanged.
+                var existing = File.ReadAllText(path);
+                if (existing == json)
+                    return json;
+            }
+
             File.WriteAllText(path, json);
             return json;
         }

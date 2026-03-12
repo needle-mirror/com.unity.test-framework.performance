@@ -30,7 +30,7 @@ namespace Unity.PerformanceTesting.Runtime
 
         public static double ConvertSample(SampleUnit from, SampleUnit to, double value)
         {
-            if (from.Equals(to)) return value;
+            if (from == to) return value;
             var ratio = GetRatio(from, to);
             return value * ratio;
         }
