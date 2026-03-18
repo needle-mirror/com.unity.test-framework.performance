@@ -47,7 +47,7 @@ namespace Unity.PerformanceTesting.Measurements
                 // Validate that the recorder is attached to a valid marker
                 if (!sampleGroup.ProfilerRecorder.Valid)
                 {
-                    Debug.LogAssertion($"ProfilerMarker measurement is attached to invalid marker \"{sampleGroup.SampleGroup.Name}\"! Ensure the marker is created at the time of the measurement");
+                    Debug.LogError($"ProfilerMarker measurement is attached to invalid marker \"{sampleGroup.SampleGroup.Name}\"! Ensure the marker is created at the time of the measurement");
                     continue;
                 }
 
