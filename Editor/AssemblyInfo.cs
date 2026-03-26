@@ -3,4 +3,4 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Unity.PerformanceTesting.Tests.Editor")]
 
-[assembly: AssemblyVersion("3.2.2")]
+[assembly: AssemblyVersion("3.4.0")]

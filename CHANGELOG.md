@@ -1,5 +1,8 @@
 # Changelog
 
+## [3.4.0] - 2026-03-26
+- Internal fixes only
+
 ## [3.3.0] - 2026-03-18
 - Internal fixes only
 
