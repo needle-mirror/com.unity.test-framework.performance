@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.4.1] - 2026-04-17
+
+### Fixed
+- Order dependency JSON content to not rewrite it to disk when contents have not actually changed.
+
 ## [3.4.0] - 2026-03-26
 - Internal fixes only
 

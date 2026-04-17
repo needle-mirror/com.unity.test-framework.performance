@@ -20,6 +20,7 @@ namespace Unity.PerformanceTesting.Editor
     internal class TestRunBuilder : IPrebuildSetup, IPostBuildCleanup, IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
         private const string cleanResources = "PT_ResourcesCleanup";
+        private const bool EnableDetailedDiffLogging = true;
 
         public int callbackOrder
         {
@@ -74,7 +75,7 @@ namespace Unity.PerformanceTesting.Editor
 #else
             packages = UnityEditor.PackageManager.PackageInfo.GetAllRegisteredPackages();
 #endif
-            var reformated = packages.Select(p => $"{p.name}@{p.version}").ToList();
+            var reformated = packages.Select(p => $"{p.name}@{p.version}").OrderBy(p => p).ToList();
 #if !UNITY_2021_1_OR_NEWER
             cachedDependencies = reformated;
 #endif
@@ -223,14 +224,32 @@ namespace Unity.PerformanceTesting.Editor
             var json = JsonUtility.ToJson(obj);
             if (File.Exists(path))
             {
-                // Prevents unnecessary asset recompilation by skipping the write when the content is unchanged.
                 var existing = File.ReadAllText(path);
                 if (existing == json)
+                {
                     return json;
+                }
+
+                Debug.LogWarning($"[TestRunBuilder] Content changed for '{path}' - rewriting file\nOld length: {existing.Length} bytes\nNew length: {json.Length} bytes");
+
+                if (EnableDetailedDiffLogging)
+                {
+                    LogContentDifferences(existing, json);
+                }
+            }
+            else
+            {
+                Debug.Log($"[TestRunBuilder] Creating new file '{path}' ({json.Length} bytes)");
             }
 
             File.WriteAllText(path, json);
             return json;
+        }
+
+        private void LogContentDifferences(string existing, string json)
+        {
+            Debug.Log($"[TestRunBuilder] Old content:\n{existing}");
+            Debug.Log($"[TestRunBuilder] New content:\n{json}");
         }
 
         private string SaveToPrefs(object obj, string key)
