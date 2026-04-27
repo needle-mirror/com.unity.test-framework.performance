@@ -224,6 +224,17 @@ namespace Unity.PerformanceTesting
         }
 
         private static double[] s_Buckets;
+
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod]
+        static void ResetStaticsOnLoad()
+        {
+            m_Disposables?.Clear();
+            OnTestEnded = null;
+            s_Buckets = null;
+        }
+#endif
+
         static void AppendSampleHistogram(StringBuilder sb, SampleGroup s, int buckets)
         {
             if (s_Buckets == null || s_Buckets.Length < buckets)

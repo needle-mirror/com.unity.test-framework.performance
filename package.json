@@ -1,7 +1,7 @@
 {
   "name": "com.unity.test-framework.performance",
   "displayName": "Performance testing API",
-  "version": "3.4.1",
+  "version": "3.4.2",
   "unity": "2020.3",
   "description": "Package that extends Unity Test Framework package. Adds performance testing capabilities and collects configuration metadata.",
   "keywords": [
@@ -13,18 +13,18 @@
     "com.unity.modules.jsonserialize": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.test-framework.performance.tests": "3.4.1"
+    "com.unity.test-framework.performance.tests": "3.4.2"
   },
   "_upm": {
-    "changelog": "### Fixed\n- Order dependency JSON content to not rewrite it to disk when contents have not actually changed."
+    "changelog": "### Added\n- Made the package compatible with Fast Enter Playmode"
   },
   "upmCi": {
-    "footprint": "ed7240b6f072ddd20b8555431ba87bbda27c0998"
+    "footprint": "e7ae2a884d464ab26285c404cda818227e1b5fe6"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.test-framework.performance@3.4/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.test-framework.performance.git",
     "type": "git",
-    "revision": "0f7dfc9b35db46dfc5132bf4af2373c98685e0d3"
+    "revision": "fce8582a2e0abbae1886a179a526464d31775620"
   }
 }

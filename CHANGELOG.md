@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.4.2] - 2026-04-27
+
+### Added
+- Made the package compatible with Fast Enter Playmode
+
 ## [3.4.1] - 2026-04-17
 
 ### Fixed

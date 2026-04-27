@@ -7,4 +7,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.PerformanceTesting.Tests.Runtime")]
 [assembly: InternalsVisibleTo("Unity.GraphTools.Foundation.Testing.Editor")]
 
-[assembly: AssemblyVersion("3.4.1")]
+[assembly: AssemblyVersion("3.4.2")]

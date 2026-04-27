@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 using Unity.PerformanceTesting.Runtime;
+using UnityEngine;
 
 namespace Unity.PerformanceTesting.Data
 {
@@ -21,6 +22,14 @@ namespace Unity.PerformanceTesting.Data
         }
 
         private static RunSettings m_Instance;
+
+#if UNITY_EDITOR
+[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStaticsOnLoad()
+        {
+            m_Instance = null;
+        }
+#endif
 
         /// <summary>
         /// Singleton instance of settings.

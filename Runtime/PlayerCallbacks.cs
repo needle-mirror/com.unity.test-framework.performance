@@ -16,6 +16,14 @@ namespace Unity.PerformanceTesting
     {
         internal static bool Saved { get; set; }
 
+#if UNITY_EDITOR
+[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStaticsOnLoad()
+        {
+            Saved = false;
+        }
+#endif
+
         public void RunStarted(ITest testsToRun)
         {
             // This method is empty because it's part of the NUnit framework's ITestListener interface,
