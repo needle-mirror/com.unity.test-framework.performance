@@ -42,6 +42,23 @@ namespace Unity.PerformanceTesting
         /// List of sample groups assigned to the test.
         /// </summary>
         public List<SampleGroup> SampleGroups = new List<SampleGroup>();
+
+        /// <summary>
+        /// A default threshold value intended to indicate no performance regression threshold is active for a given performance test.
+        /// </summary>
+        internal const double DefaultThresholdValue = -1.0;
+
+        /// <summary>
+        /// List of sample groups assigned to the test.
+        /// </summary>
+        internal const double ThresholdSerializationCutOff = 0.0;
+
+        /// <summary>
+        /// Performance regression threshold to be used by a performance test reporting service
+        /// </summary>
+        [NonSerialized]
+        public double Threshold = DefaultThresholdValue;
+
         /// <summary>
         /// Singleton instance of active performance test.
         /// </summary>
@@ -90,11 +107,22 @@ namespace Unity.PerformanceTesting
                 MethodName = methodName,
                 Categories = currentTest.GetAllCategoriesFromTest(),
                 Version = GetVersion(currentTest),
+                Threshold =  GetThreshold(currentTest),
                 m_PerformanceTestHelper = performanceTestHelper
             };
 
             Active = test;
             performanceTestHelper.ActiveTest = test;
+        }
+
+        private static double GetThreshold(ITest currentTest)
+        {
+            var thresholdProperty = currentTest.Properties.Get("Threshold");
+
+            if (thresholdProperty != null)
+                return Convert.ToDouble(thresholdProperty);
+
+            return DefaultThresholdValue;
         }
 
         private static string GetVersion(ITest currentTest)
@@ -192,7 +220,19 @@ namespace Unity.PerformanceTesting
 
         internal string Serialize()
         {
-            return JsonUtility.ToJson(Active);
+            var output = JsonUtility.ToJson(this);
+
+            if (Threshold > ThresholdSerializationCutOff)
+            {
+                // JsonUtility.ToJson always emits a flat "{...}" with no trailing whitespace,
+                // and PerformanceTest always has other fields, so we can safely splice the
+                // Threshold key in just before the closing brace. Threshold is [NonSerialized]
+                // so JsonUtility itself will never include it.
+                var threshold = Threshold.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+                output = output.Substring(0, output.Length - 1) + ",\"Threshold\":" + threshold + "}";
+            }
+
+            return output;
         }
 
         /// <summary>

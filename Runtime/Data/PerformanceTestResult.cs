@@ -38,5 +38,10 @@ namespace Unity.PerformanceTesting.Data
         /// Groups of performance samples.
         /// </summary>
         [RequiredMember] public List<SampleGroup> SampleGroups = new List<SampleGroup>();
+
+        /// <summary>
+        /// Performance regression threshold.  A negative value indicates it is not to be used/transmitted.
+        /// </summary>
+public double Threshold = PerformanceTest.DefaultThresholdValue;
     }
 }

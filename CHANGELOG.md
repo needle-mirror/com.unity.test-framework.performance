@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.5.0] - 2026-05-14
+
+### Added
+- A performance regression Threshold property for the Performance attribute. It is only reported when the value is greater than 0.0 and is to be used by the performance reporting endpoint to compare against historical data.
+
 ## [3.4.2] - 2026-04-27
 
 ### Added
