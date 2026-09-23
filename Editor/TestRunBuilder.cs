@@ -22,6 +22,9 @@ namespace Unity.PerformanceTesting.Editor
         private const string cleanResources = "PT_ResourcesCleanup";
         private const bool EnableDetailedDiffLogging = true;
 
+        // UUM-132359: Library/ cache for the Resources/PerformanceTestRun*.json .meta files, so their GUID survives across builds.
+        private const string MetaCacheDir = "Library/PerformanceTesting/MetaCache";
+
         public int callbackOrder
         {
             get { return 0; }
@@ -29,7 +32,19 @@ namespace Unity.PerformanceTesting.Editor
 
         public void OnPreprocessBuild(BuildReport report)
         {
+            if (!ShouldWriteBuildFiles(report.summary.options))
+            {
+                // Sweep artifacts a previously aborted test build may have left
+                // behind, so they don't get baked into a non-test player.
+                Cleanup();
+                return;
+            }
+
             CreateResourcesFolder();
+
+            // UUM-132359: restore the cached .meta before writing, so the asset keeps its GUID instead of getting a new one.
+            RestoreCachedMeta(Utils.TestRunPath);
+            RestoreCachedMeta(Utils.RunSettingsPath);
 
             var run = CreateBuildInfo();
             SaveToStorage(run, Utils.TestRunPath);
@@ -40,12 +55,28 @@ namespace Unity.PerformanceTesting.Editor
 
         public void OnPostprocessBuild(BuildReport report)
         {
+            if (ShouldWriteBuildFiles(report.summary.options))
+            {
+                // UUM-132359: stash the .meta before Cleanup() deletes it, so the next test build can reuse the same GUID.
+                StashMeta(Utils.TestRunPath);
+                StashMeta(Utils.RunSettingsPath);
+            }
+
+            // Runs unconditionally so a non-test build also sweeps up files
+            // left behind by a previously aborted test build.
             Cleanup();
+        }
+
+        // The run info and settings files are only ever read by performance tests
+        // executing inside the player, so builds without test assemblies never need them.
+        internal static bool ShouldWriteBuildFiles(BuildOptions options)
+        {
+            return (options & BuildOptions.IncludeTestAssemblies) != 0;
         }
 
         public void Setup()
         {
-            EditorPrefs.SetBool(cleanResources, false);
+            SessionState.SetBool(cleanResources, false);
 
             var run = CreateRunInfo();
             SaveToPrefs(run, Utils.PlayerPrefKeyRunJSON);
@@ -96,12 +127,42 @@ namespace Unity.PerformanceTesting.Editor
                 modifiedAssets = true;
             }
 
-            if (EditorPrefs.GetBool(cleanResources) && Directory.Exists(Utils.ResourcesPath))
+            // Only delete the Resources folder if we created it and it is empty by
+            // now - anything still inside was put there by the user, e.g. while a
+            // stale cleanup flag was left behind by an aborted build.
+            if (SessionState.GetBool(cleanResources, false) && Directory.Exists(Utils.ResourcesPath)
+                && Directory.GetFileSystemEntries(Utils.ResourcesPath).Length == 0)
             {
-                Directory.Delete(Utils.ResourcesPath, true);
-                if(File.Exists(Utils.ResourcesPath + ".meta")) {File.Delete(Utils.ResourcesPath + ".meta");}
-                modifiedAssets = true;
+                try
+                {
+                    // Non-recursive on purpose: if an external process created a file
+                    // in the window since the emptiness check, fail instead of
+                    // deleting it. Cleanup also runs during build preprocessing,
+                    // where an unhandled exception would fail the build, so
+                    // deletion failures only warn - a leftover empty folder is acceptable.
+                    Directory.Delete(Utils.ResourcesPath, false);
+                    modifiedAssets = true;
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                {
+                    Debug.LogWarning($"[TestRunBuilder] Could not delete '{Utils.ResourcesPath}': {e.Message}");
+                }
+
+                // Only remove the folder's meta once the folder is really gone -
+                // deleting the meta of an existing folder would make Unity
+                // regenerate it with a new GUID.
+                if (!Directory.Exists(Utils.ResourcesPath))
+                {
+                    modifiedAssets |= TryDeleteFile(Utils.ResourcesPath + ".meta");
+                }
             }
+
+            // The flag describes at most one build cycle; reset it so it cannot
+            // leak into a later, unrelated build.
+            SessionState.SetBool(cleanResources, false);
+            // Scrub the legacy EditorPrefs flag older package versions may have
+            // left behind; it is no longer read.
+            EditorPrefs.DeleteKey(cleanResources);
 
             // Only refresh the AssetDatabase if we actually deleted performance test files
             if (modifiedAssets)
@@ -112,22 +173,74 @@ namespace Unity.PerformanceTesting.Editor
 
         private bool DeleteFileAndMeta(string path)
         {
-            bool deletedAny = false;
+            // Non-short-circuiting so the meta file is attempted even if the
+            // main file could not be deleted.
+            return TryDeleteFile(path) | TryDeleteFile(path + ".meta");
+        }
 
-            if (File.Exists(path))
+        private static bool TryDeleteFile(string path)
+        {
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+
+            try
             {
                 File.Delete(path);
-                deletedAny = true;
+                return true;
             }
-
-            var metaPath = path + ".meta";
-            if (File.Exists(metaPath))
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
-                File.Delete(metaPath);
-                deletedAny = true;
+                // Cleanup runs during build preprocessing, where an unhandled
+                // exception (e.g. from a transiently locked file) would fail the
+                // build; the next cleanup pass will retry.
+                Debug.LogWarning($"[TestRunBuilder] Could not delete '{path}': {e.Message}");
+                return false;
             }
+        }
 
-            return deletedAny;
+        // UUM-132359: copy the asset's .meta into MetaCacheDir before we delete it, preserving its GUID.
+        private static void StashMeta(string assetPath)
+        {
+            var srcMeta = assetPath + ".meta";
+            if (!File.Exists(srcMeta)) return;
+
+            try
+            {
+                Directory.CreateDirectory(MetaCacheDir);
+                var destMeta = Path.Combine(MetaCacheDir, Path.GetFileName(srcMeta));
+                File.Copy(srcMeta, destMeta, overwrite: true);
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[TestRunBuilder] Could not cache '{srcMeta}': {e.Message}");
+            }
+        }
+
+        // UUM-132359: counterpart to StashMeta - restores the cached .meta before the asset is rewritten. No-op if the
+        // cache is empty or a .meta already exists at the destination.
+        private static void RestoreCachedMeta(string assetPath)
+        {
+            var destMeta = assetPath + ".meta";
+            if (File.Exists(destMeta)) return;
+
+            var cachedMeta = Path.Combine(MetaCacheDir, Path.GetFileName(destMeta));
+            if (!File.Exists(cachedMeta)) return;
+
+            try
+            {
+                var destDir = Path.GetDirectoryName(destMeta);
+                if (!string.IsNullOrEmpty(destDir) && !Directory.Exists(destDir))
+                {
+                    Directory.CreateDirectory(destDir);
+                }
+                File.Copy(cachedMeta, destMeta, overwrite: false);
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[TestRunBuilder] Could not restore cached meta for '{assetPath}': {e.Message}");
+            }
         }
 
         private static Data.Editor GetEditorInfo()
@@ -211,11 +324,11 @@ namespace Unity.PerformanceTesting.Editor
         {
             if (Directory.Exists(Utils.ResourcesPath))
             {
-                EditorPrefs.SetBool(cleanResources, false);
+                SessionState.SetBool(cleanResources, false);
                 return;
             }
 
-            EditorPrefs.SetBool(cleanResources, true);
+            SessionState.SetBool(cleanResources, true);
             AssetDatabase.CreateFolder("Assets", "Resources");
         }
 

@@ -71,7 +71,7 @@ namespace Unity.PerformanceTesting.Measurements
             foreach (var marker in profilerMarkerNames)
             {
                 var sampleGroup = new SampleGroup(marker, SampleUnit.Nanosecond, false);
-                m_ProfilerMarkerMeasurement.AddAndEnableProfilerSample(sampleGroup);
+                m_ProfilerMarkerMeasurement.AddProfilerSample(sampleGroup);
             }
 
             return this;
@@ -87,7 +87,7 @@ namespace Unity.PerformanceTesting.Measurements
             if (sampleGroups == null)
                 return this;
 
-            m_ProfilerMarkerMeasurement.AddAndEnableProfilerSampleGroup(sampleGroups);
+            m_ProfilerMarkerMeasurement.AddProfilerSampleGroup(sampleGroups);
 
             return this;
         }
@@ -206,8 +206,20 @@ namespace Unity.PerformanceTesting.Measurements
         }
 
         /// <summary>
-        /// Enables recording of garbage collector calls as additional sample group with ".GC()" postfix.
+        /// Enables recording of the number of managed allocations made by the measured method - the "GC.Alloc" counter
+        /// in the Unity Profiler - as an additional sample group with a ".GC()" name postfix.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The recorded value is a count of allocations, not an amount of bytes, and only allocations made on the
+        /// thread running the measurement are counted. It is reported per iteration when IterationsPerMeasurement is
+        /// used, and warmup, probing, SetUp and CleanUp are excluded from it.
+        /// Enabling this also forces a full blocking garbage collection immediately before each timed region, so that a
+        /// collection triggered by the measured method's own allocations does not land inside the timed region and show
+        /// up as periodic spikes across the samples. Because of that, the times reported for a method that allocates
+        /// are not directly comparable between a run with GC() and one without.
+        /// </para>
+        /// </remarks>
         /// <returns>An updated instance of the MethodMeasurement to be used in fluent syntax.</returns>
         public MethodMeasurement GC()
         {
@@ -294,6 +306,10 @@ namespace Unity.PerformanceTesting.Measurements
 
         private void RunForIterations(int iterations, int measurements, bool useAverage)
         {
+            // Start marker recorders only for the measured iterations so warmup and probing samples
+            // do not contribute to the reported marker values
+            m_ProfilerMarkerMeasurement.StartRecording();
+
             for (var j = 0; j < measurements; j++)
             {
                 var executionTime = iterations == 1 ? ExecuteSingleIteration() : ExecuteForIterations(iterations);
@@ -307,6 +323,10 @@ namespace Unity.PerformanceTesting.Measurements
 
         private void RunForIterations(int iterations)
         {
+            // Start marker recorders only for the measured iterations so warmup and probing samples
+            // do not contribute to the reported marker values
+            m_ProfilerMarkerMeasurement.StartRecording();
+
             while(true)
             {
                 var executionTime = iterations == 1 ? ExecuteSingleIteration() : ExecuteForIterations(iterations);
@@ -469,6 +489,13 @@ namespace Unity.PerformanceTesting.Measurements
 
         private void StartGCRecorder()
         {
+            // Collecting here, before the timed region opens, keeps the collection that the measured code's own
+            // allocations would otherwise trigger from landing inside it. Every caller opens a timed region right
+            // after this, so with SetUp or CleanUp - where each of the IterationsPerMeasurement inner executions is
+            // timed separately - this deliberately runs once per inner execution rather than once per sample.
+            // Fully qualified because this class has its own GC() method.
+            System.GC.Collect();
+
             m_GCRecorder.Start();
         }
 

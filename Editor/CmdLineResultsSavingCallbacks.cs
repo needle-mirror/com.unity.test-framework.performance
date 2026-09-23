@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
 
@@ -11,9 +10,25 @@ namespace Unity.PerformanceTesting.Editor
         [SerializeField]
         string resultsLocation;
 
+        IncrementalRunResultsWriter m_IncrementalWriter;
+
+        IncrementalRunResultsWriter IncrementalWriter
+        {
+            get
+            {
+                if (m_IncrementalWriter == null)
+                {
+                    m_IncrementalWriter = new IncrementalRunResultsWriter();
+                }
+
+                return m_IncrementalWriter;
+            }
+        }
+
         void ICallbacks.RunStarted(ITestAdaptor testsToRun)
         {
             PerformanceTest.Active = null;
+            IncrementalWriter.BeginRun();
         }
 
         void ICallbacks.RunFinished(ITestResultAdaptor result)
@@ -29,9 +44,7 @@ namespace Unity.PerformanceTesting.Editor
                 }
 
                 Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "Saving performance results to: {0}", resultsLocation);
-                var jsonContents = JsonUtility.ToJson(performanceTestRun, true);
-                CreateDirectoryIfNecessary(resultsLocation);
-                File.WriteAllText(resultsLocation, jsonContents);
+                IncrementalRunResultsWriter.WriteResultsFile(resultsLocation, performanceTestRun);
             }
             catch (Exception e)
             {
@@ -40,18 +53,12 @@ namespace Unity.PerformanceTesting.Editor
             }
         }
 
-        static void CreateDirectoryIfNecessary(string filePath)
-        {
-            var directoryPath = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(directoryPath) && !Directory.Exists(directoryPath))
-            {
-                Directory.CreateDirectory(directoryPath);
-            }
-        }
-
         void ICallbacks.TestStarted(ITestAdaptor test) { }
 
-        void ICallbacks.TestFinished(ITestResultAdaptor result) { }
+        void ICallbacks.TestFinished(ITestResultAdaptor result)
+        {
+            IncrementalWriter.AppendTestResults(resultsLocation, result.Output);
+        }
 
         public void SetResultsLocation(string perfTestResultsPath)
         {

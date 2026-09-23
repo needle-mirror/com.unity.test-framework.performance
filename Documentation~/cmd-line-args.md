@@ -10,13 +10,17 @@ the [Unity Test Framework documentation](https://docs.unity3d.com/Packages/com.u
 
 The path where Unity should save the JSON file with performance test run results. By default, Unity saves it in
 the [Application.persistentDataPath](https://docs.unity3d.com/ScriptReference/Application-persistentDataPath.html)
-folder.
+folder, and, if you specify the `testResults` argument of the Unity Test Framework package, in the folder that holds the
+NUnit test results file as well.
 
 Please note that when this argument is not provided, Unity generates two report files at the default results location -
 the JSON file with performance test run results as well as the NUnit test results XML file that these results are
 extracted from. This behaviour currently exists for backwards compatibility reasons and will be deprecated over time, as
 the destination path of the test results XML file is already controlled by the `testResults` command-line argument of
 the Unity Test Framework package.
+
+Unity updates the results file after each test finishes rather than only when the run completes, so a run that ends
+unexpectedly still leaves the results that it had already measured on disk.
 
 ## Example of command-line usage
 

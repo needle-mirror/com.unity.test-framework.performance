@@ -10,6 +10,7 @@ namespace Unity.PerformanceTesting.Measurements
     {
         private readonly bool m_AverageSampleMeasurement;
         bool m_DisposedValue;
+        bool m_RecordingStarted;
 
         protected struct RecordedSampleGroup
         {
@@ -24,27 +25,46 @@ namespace Unity.PerformanceTesting.Measurements
             m_AverageSampleMeasurement = averageSampleMeasurement;
         }
 
-        public void AddAndEnableProfilerSampleGroup(IEnumerable<SampleGroup> sampleGroups)
+        public void AddProfilerSampleGroup(IEnumerable<SampleGroup> sampleGroups)
         {
             foreach (var sampleGroup in sampleGroups)
             {
-                AddAndEnableProfilerSample(sampleGroup);
+                AddProfilerSample(sampleGroup);
             }
         }
 
-        public void AddAndEnableProfilerSample(SampleGroup sampleGroup)
+        public void AddProfilerSample(SampleGroup sampleGroup)
         {
-            var recorder = new ProfilerRecorder(sampleGroup.Name, 1, ProfilerRecorderOptions.WrapAroundWhenCapacityReached | ProfilerRecorderOptions.SumAllSamplesInFrame);
-            // Start recorder immediately
-            recorder.Start();
-            m_SampleGroups.Add(new RecordedSampleGroup { SampleGroup = sampleGroup, ProfilerRecorder = recorder });
+            m_SampleGroups.Add(new RecordedSampleGroup { SampleGroup = sampleGroup });
+        }
+
+        /// <summary>
+        /// Creates and starts the recorders for all registered sample groups. Samples produced by the
+        /// measured markers before this call are not part of the measurement, which allows warmup
+        /// iterations to be excluded from the reported values.
+        /// </summary>
+        public void StartRecording()
+        {
+            if (m_RecordingStarted)
+                return;
+            m_RecordingStarted = true;
+
+            for (var i = 0; i < m_SampleGroups.Count; i++)
+            {
+                var sampleGroup = m_SampleGroups[i];
+                sampleGroup.ProfilerRecorder = new ProfilerRecorder(sampleGroup.SampleGroup.Name, 1,
+                    ProfilerRecorderOptions.WrapAroundWhenCapacityReached | ProfilerRecorderOptions.SumAllSamplesInFrame | ProfilerRecorderOptions.StartImmediately);
+                m_SampleGroups[i] = sampleGroup;
+            }
         }
 
         public void SampleProfilerSamples(bool stopRecorders = false)
         {
             foreach (var sampleGroup in m_SampleGroups)
             {
-                // Validate that the recorder is attached to a valid marker
+                // Validate that the recorder is attached to a valid marker. This check must stay ahead of
+                // any Stop/GetSample call: it also skips recorders that were never started (default handle),
+                // on which Stop would throw InvalidOperationException
                 if (!sampleGroup.ProfilerRecorder.Valid)
                 {
                     Debug.LogError($"ProfilerMarker measurement is attached to invalid marker \"{sampleGroup.SampleGroup.Name}\"! Ensure the marker is created at the time of the measurement");

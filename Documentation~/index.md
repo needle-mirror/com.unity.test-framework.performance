@@ -16,18 +16,9 @@ the [Unity Test Framework documentation](https://docs.unity3d.com/Packages/com.u
 
 ## Installing the Performance Testing Package
 
-Install the Performance Testing Package package using one of the following methods:
+From Unity version 6000.6 the Performance Testing package is a [Core package](https://docs.unity3d.com/Manual/pack-core.html) which is automatically installed with the Unity Editor.
 
-* Add the package by [installing from a Git URL](https://docs.unity3d.com/Manual/upm-ui-giturl.html).
-* Add the package as a dependency to the [project manifest](https://docs.unity3d.com/Manual/upm-manifestPrj.html).
-
-Example:
-
-1. Open the `manifest.json` file for your Unity project (located in the YourProject/Packages directory) in a text
-   editor.
-2. Add `"com.unity.test-framework.performance": "3.0.3",` to the dependencies.
-3. Save the manifest.json file.
-4. Verify the Performance Testing Package is now installed by opening the Unity Package Manager window.
+To install this package with an older supported Unity version, use the [Package Manager](https://docs.unity3d.com/Manual/upm-ui-actions.html). 
 
 When the package is installed, add a reference to `Unity.PerformanceTesting` in your assembly definition to access the
 performance testing APIs.
@@ -42,13 +33,12 @@ of the package is compatible with which Unity release streams.
 
 | Unity stream | Package version |
 |--------------|-----------------|
-| 2023.2       | 3.0.3           |
-| 2023.1       | 3.0.3           |
-| 2022.2       | 3.0.3           |
-| 2022.1       | 3.0.3           |
-| 2021.3       | 3.0.3           |
-| 2020.3       | 3.0.3           |
-| 2019.4       | 2.8.1-preview   |
+| 6000.7       | 6.7.0           |
+| 6000.6       | 6.6.0           |
+| 6000.3       | 3.x             |
+| 6000.0       | 3.x             |
+| 2022.3       | 3.x             |
+| 2020.3       | 3.x             |
 
 ## Tips
 

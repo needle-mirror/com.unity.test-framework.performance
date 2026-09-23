@@ -19,7 +19,7 @@ measurements are taken:
 * **SampleGroup(string name)** - name of the measurement, defaults to "Time" if unspecified.
 * **SampleGroup(SampleGroup sampleGroup)** - a sample group with a custom name and measurement unit. This will override
   the otherwise default value of "Time".
-* **GC()** - if specified, measures the total number of Garbage Collection allocation calls (known as `GC.Alloc` in Unity Profiler) as an additional sample group with ".GC()" name postfix.
+* **GC()** - if specified, measures the total number of Garbage Collection allocation calls (known as `GC.Alloc` in Unity Profiler) as an additional sample group with ".GC()" name postfix. Also performs a full blocking garbage collection immediately before each timed region, so that a collection triggered by the measured method's own allocations does not land inside it and show up as periodic spikes across the samples. Normally that is one collection per measurement, but `SetUp` and `CleanUp` cause each of the `IterationsPerMeasurement` inner executions to be timed separately, so each of those gets its own collection - a 10-measurement run with 5 iterations per measurement and a setup action performs 50 collections, which is considerably slower. Because of all this, the times reported for a method that allocates are not directly comparable between a run with `GC()` and one without.
 * **SetUp(Action action)** - is called every iteration before method execution. Setup time is not measured.
 * **CleanUp(Action action)** - is called every iteration after method execution. Cleanup time is not measured.
 

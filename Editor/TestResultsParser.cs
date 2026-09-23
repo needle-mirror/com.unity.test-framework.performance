@@ -98,6 +98,44 @@ namespace Unity.PerformanceTesting.Editor
             return null;
         }
 
+        // Appends the results found in the output of a single finished test to an accumulating run,
+        // creating the run from the execution metadata when it has not been encountered yet.
+        internal static bool TryAppendPerformanceRunData(string testOutput, ref Run run)
+        {
+            if (string.IsNullOrEmpty(testOutput))
+            {
+                return false;
+            }
+
+            var testOutputs = new[] { testOutput };
+
+            try
+            {
+                if (run == null)
+                {
+                    run = ExtractPerformanceTestRunInfo(testOutputs);
+                    if (run == null)
+                    {
+                        return false;
+                    }
+                }
+
+                var resultCountBeforeAppend = run.Results.Count;
+                DeserializeTestResults(testOutputs, run);
+                return run.Results.Count > resultCountBeforeAppend;
+            }
+            catch (FormatException fe)
+            {
+                Debug.LogError($"Invalid performance test results format: {fe.Message}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Unexpected exception while reading performance test results: {e.Message}");
+            }
+
+            return false;
+        }
+
         static Run ExtractPerformanceTestRunInfo(string[] testOutputs)
         {
             foreach (var output in testOutputs)

@@ -64,6 +64,11 @@ namespace Unity.PerformanceTesting.Data
         [RequiredMember] public bool GraphicsJobs;
 
         /// <summary>
+        /// Whether the Unity Graphics Kernel is enabled or not.
+        /// </summary>
+        [RequiredMember] public bool UnityGraphicsKernel;
+
+        /// <summary>
         /// Whether GPU skinning is enabled or not.
         /// </summary>
         [RequiredMember] public bool GpuSkinning;

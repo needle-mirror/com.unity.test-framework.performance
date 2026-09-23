@@ -58,6 +58,16 @@ namespace Unity.PerformanceTesting
             run.Player.RenderThreadingMode = SystemInfo.renderingThreadingMode.ToString();
             run.Player.MtRendering = SystemInfo.graphicsMultiThreaded;
             run.Player.GraphicsJobs = SystemInfo.renderingThreadingMode.ToString().IndexOf("Job", StringComparison.InvariantCultureIgnoreCase) >= 0;
+            // This is a bit of a hack, but there isn't currently a way to get this information at runtime. Eventually this will be a proper player setting we can query.
+            try
+            {
+                run.Player.UnityGraphicsKernel = Array.Exists(Environment.GetCommandLineArgs(), arg => arg.Equals("-force-ugk", StringComparison.OrdinalIgnoreCase));
+            }
+            catch (NotSupportedException)
+            {
+                // In some environments (WebGL) we can't query command line arguments, so we just catch the exception and move on, leaving this field with its default value of false.
+                // When UGK supports these platforms we can update this code to properly query the player setting instead of relying on command line arguments.
+            }
         }
 
         /// <summary>

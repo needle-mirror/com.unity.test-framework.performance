@@ -12,7 +12,9 @@ namespace Unity.PerformanceTesting.Measurements
 
         public void AddProfilerSampleGroup(IEnumerable<SampleGroup> sampleGroups)
         {
-            m_ProfilerMarkerMeasurement.AddAndEnableProfilerSampleGroup(sampleGroups);
+            m_ProfilerMarkerMeasurement.AddProfilerSampleGroup(sampleGroups);
+            // Frame measurements sample once per frame, so recording starts right away
+            m_ProfilerMarkerMeasurement.StartRecording();
         }
 
         public void StopAndSampleRecorders()

@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.6.0] - 2026-09-23
+
+### Added
+- UnityGraphicsKernel flag added to track if UGK is used or not at runtime.
+
+### Changed
+- PerformanceTestRunInfo.json and PerformanceTestRunSettings.json are no longer generated during player builds that do not include test assemblies, as they are only read by performance tests running inside the player. Stale files left behind by an aborted test build are removed before such builds instead of being included in them.
+- When `perfTestResults` is not specified but the Unity Test Framework `testResults` argument is, the performance results file is now also saved next to the NUnit results file. A command line run collects that directory, so results of a run that did not finish can still be picked up from it.
+
+### Fixed
+- Performance test results are now saved to the results file as each test finishes instead of only when the whole run completes, so results collected before a crash, a test timeout or another premature shutdown of a test run are no longer lost. The results file is also written through a temporary file so an interrupted write cannot leave it truncated.
+- Repeat test-player builds no longer assign a fresh GUID to the PerformanceTestRunInfo.json/PerformanceTestRunSettings.json assets on every build. Previously, deleting these assets' `.meta` files as part of post-build cleanup caused Unity to assign a new GUID on the next build, which the data pipeline treated as a change and triggered a full asset rebuild even when nothing else changed. The `.meta` files are now cached in `Library/` between builds and restored before the assets are rewritten, scoped to builds with test assemblies. (UUM-132359)
+- Post-build cleanup no longer deletes the Assets/Resources folder if it contains user content. Previously, an aborted test build could leave a stale cleanup flag behind, causing a later build to recursively delete the entire folder.
+- Cleanup of performance test artifacts is now best-effort: files or folders that cannot be deleted (e.g. transiently locked by another process) log a warning instead of throwing, which would previously fail the build when cleanup runs during build preprocessing.
+- The internal cleanup flag tracking whether the package created the Assets/Resources folder moved from EditorPrefs to SessionState, making it per-project and per-session. Previously the flag was shared across all Unity projects on the machine and could go stale across editor restarts.
+- `Measure.Method().GC()` again forces a full garbage collection immediately before each timed region, restoring the behaviour from before the switch to the `ProfilerRecorder` API. Without it, a collection triggered by the measured code's own allocations lands inside the timed region and shows up as periodic spikes across the samples. As before: this only happens when `GC()` is specified; warmup and probing iterations are not affected; and because `SetUp`/`CleanUp` cause each of the `IterationsPerMeasurement` inner executions to be timed separately, that combination gets one collection per inner execution rather than one per sample, which makes it considerably slower. Reported times for allocating methods measured with `GC()` will change, generally becoming lower and more stable, so baselines recorded since 3.2.1 are not comparable.
+- Profiler marker recorders used by `Measure.Method` now start when the measured iterations begin instead of when `ProfilerMarkers()` is called, so warmup and probing iterations no longer contribute to the reported marker values or add sample collection overhead to those phases.
+
 ## [3.5.0] - 2026-05-14
 
 ### Added
