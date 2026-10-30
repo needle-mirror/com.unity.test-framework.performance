@@ -59,6 +59,9 @@ namespace Unity.PerformanceTesting
         [NonSerialized]
         public double Threshold = DefaultThresholdValue;
 
+        // Deliberately not reset on entering Play mode, unlike the other statics in this package.
+        // It holds the test that is running, and a test can enter and exit Play mode before it ends.
+        // It is cleared when the test ends, and restored after a domain reload when PerformanceTestHelper.ActiveTest is deserialized.
         /// <summary>
         /// Singleton instance of active performance test.
         /// </summary>
@@ -150,40 +153,73 @@ namespace Unity.PerformanceTesting
                 UnityEngine.Object.DestroyImmediate(Active.m_PerformanceTestHelper.gameObject);
             }
 
-            DisposeMeasurements();
-            Active.CalculateStatisticalValues();
-
             try
             {
-                // Notify subscribers that the test has ended by invoking OnTestEnded event
-                OnTestEnded?.Invoke();
-            }
-            catch (Exception ex)
-            {
-                // An exception occurred while invoking the OnTestEnded event.
-                // Log the error message, exception type, and stack trace for troubleshooting.
-                Debug.LogError($"An exception occurred in OnTestEnd callback: {ex.GetType()}: {ex.Message}\n{ex.StackTrace}");
+                DisposeMeasurements();
+                Active.CalculateStatisticalValues();
+
+                try
+                {
+                    // Notify subscribers that the test has ended by invoking OnTestEnded event
+                    OnTestEnded?.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    // An exception occurred while invoking the OnTestEnded event.
+                    // Log the error message, exception type, and stack trace for troubleshooting.
+                    Debug.LogError($"An exception occurred in OnTestEnd callback: {ex.GetType()}: {ex.Message}\n{ex.StackTrace}");
+                }
+                
+                // Must stay inside the try: logging while an earlier exception unwinds would throw again on
+                // the same sample groups and replace it, hiding the original failure.
+                LogResults();
             }
             finally
             {
-                // Regardless of whether the event invocation succeeded or not, perform cleanup
-                // and finalize the test-related operations.
-                PerformCleanupAndFinalization();
+                var endedTest = Active;
+
+                // Runs on every path, including a failure above. Leaving Active set would make
+                // PerformanceAttribute.BeforeTest skip StartTest for the next test, so a single failing test
+                // would otherwise take down every performance test that runs after it.
+                // DisposeMeasurements skips its Clear when a Dispose throws, and any measurement left behind
+                // would be disposed into the next test's results, so drop them without disposing.
+                Disposables.Clear();
+                Active = null; // Clear active object
+
+                // Callers can reuse a SampleGroup across tests, so its samples must not outlive this test
+                ResetSampleGroups(endedTest);
+                GC.Collect(); // Trigger garbage collection to free resources
             }
         }
 
-        internal static void PerformCleanupAndFinalization()
+        internal static void LogResults()
         {
             Active.LogOutput(); // Log test output
             TestContext.Out.WriteLine("##performancetestresult2:" + Active.Serialize()); // Log test result
             PlayerCallbacks.LogMetadata(); // Log metadata
-            Active = null; // Clear active object
-            GC.Collect(); // Trigger garbage collection to free resources
+        }
+
+        // Runs in a finally block, so it must not throw
+        static void ResetSampleGroups(PerformanceTest test)
+        {
+            if (test.SampleGroups == null)
+                return;
+
+            foreach (var sampleGroup in test.SampleGroups)
+            {
+                if (sampleGroup == null)
+                    continue;
+
+                sampleGroup.Samples?.Clear();
+                sampleGroup.UpdateStatistics();
+            }
         }
 
         private static void DisposeMeasurements()
         {
-            for (var i = 0; i < Disposables.Count; i++)
+            // Iterate backwards: each measurement removes itself from the list when disposed, so a forward
+            // loop would skip the element shifted into the current slot.
+            for (var i = Disposables.Count - 1; i >= 0; i--)
             {
                 Disposables[i].Dispose();
             }

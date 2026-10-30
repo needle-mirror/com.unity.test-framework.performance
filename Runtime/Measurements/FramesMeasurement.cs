@@ -300,7 +300,7 @@ namespace Unity.PerformanceTesting.Measurements
 
                 yield return WaitFor(iterations);
 
-                executionTime = TimeSpan.FromTicks(Stopwatch.GetTimestamp() - sw).TotalMilliseconds;
+                executionTime = Utils.StopwatchTicksToMilliseconds(Stopwatch.GetTimestamp() - sw);
 
                 if (iterations == 1 && executionTime > 40)
                 {
@@ -320,7 +320,7 @@ namespace Unity.PerformanceTesting.Measurements
                 }
             }
 
-            m_DesiredFrameCount = (int)(k_MinTestTimeMs * iterations / executionTime);
+            m_DesiredFrameCount = Math.Max(k_MinIterations, (int)(k_MinTestTimeMs * iterations / executionTime));
         }
 
         private IEnumerator WaitFor(int iterations)

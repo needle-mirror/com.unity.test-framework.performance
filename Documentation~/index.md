@@ -37,8 +37,6 @@ of the package is compatible with which Unity release streams.
 | 6000.6       | 6.6.0           |
 | 6000.3       | 3.x             |
 | 6000.0       | 3.x             |
-| 2022.3       | 3.x             |
-| 2020.3       | 3.x             |
 
 ## Tips
 

@@ -274,6 +274,13 @@ namespace Unity.PerformanceTesting.Editor
 
         private double GetPercentageOffset(List<SamplePoint> samplePoint, float percent, out int outputFrameIndex)
         {
+            // A sample group can be reported without any samples, so there is no frame to point at.
+            if (samplePoint.Count == 0)
+            {
+                outputFrameIndex = -1;
+                return 0;
+            }
+
             int index = (int)((samplePoint.Count - 1) * percent / 100);
             outputFrameIndex = samplePoint[index].index;
 
@@ -517,6 +524,15 @@ namespace Unity.PerformanceTesting.Editor
                                 GUILayout.ExpandHeight(false));
                             EditorGUILayout.LabelField(sampleGroup.Name, m_boldStyle);
                             EditorGUILayout.LabelField($"Sample Unit: {sampleGroup.Unit}");
+
+                            // A sample group can be reported without any samples. There is nothing to plot, and
+                            // its zero value range would put NaN coordinates into the graphs.
+                            if (samplesToDraw.Count == 0)
+                            {
+                                EditorGUILayout.HelpBox("No samples were recorded for this sample group.", MessageType.Info, true);
+                                EditorGUILayout.EndVertical();
+                                continue;
+                            }
 
                             if (samplesToDraw.Count > m_chartLimit)
                             {

@@ -35,6 +35,13 @@ namespace Unity.PerformanceTesting.Runtime
             return value * ratio;
         }
 
+        // Stopwatch ticks are denominated in Stopwatch.Frequency, which only equals
+        // TimeSpan.TicksPerSecond on some runtimes (1e7 on Mono, 1e9 on CoreCLR/Unix).
+        public static double StopwatchTicksToMilliseconds(long ticks)
+        {
+            return (double)ticks / System.Diagnostics.Stopwatch.Frequency * 1000.0;
+        }
+
         public static double GetRatio(SampleUnit from, SampleUnit to)
         {
             double f = RelativeSampleUnit(from);
@@ -72,7 +79,19 @@ namespace Unity.PerformanceTesting.Runtime
         {
             if (sampleGroup.Samples == null) return;
             var samples = sampleGroup.Samples;
-            if (samples.Count < 2)
+            if (samples.Count == 0)
+            {
+                // A sample group can be registered without ever receiving a sample - through the public
+                // AddSampleGroup API, or by a measurement whose measurement count resolves to zero. Report
+                // it with zeroed statistics instead of indexing an empty list.
+                sampleGroup.Min = 0;
+                sampleGroup.Max = 0;
+                sampleGroup.Median = 0;
+                sampleGroup.Average = 0;
+                sampleGroup.Sum = 0;
+                sampleGroup.StandardDeviation = 0;
+            }
+            else if (samples.Count == 1)
             {
                 sampleGroup.Min = samples[0];
                 sampleGroup.Max = samples[0];

@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.7.0] - 2026-10-30
+
+### Fixed
+- A SampleGroup instance passed to measurements in more than one test, for example one stored in a static field, no longer carries samples from earlier tests into the results of later ones. Measurements record into the instance they are given, so its samples and statistics are now cleared once its test has reported its result. Results of tests that reused sample groups this way are not comparable with earlier runs.
+- Unsampled sample groups are now reported with zeroed statistics, and the active test is always cleared so a failing test can no longer fail the rest of the run. [UUM-150776]
+- Measure.Scope() and Measure.Frames() converted Stopwatch timestamps as if they were TimeSpan ticks, overstating recorded times by Stopwatch.Frequency / TimeSpan.TicksPerSecond. Samples were correct on Mono but 100x too large on CoreCLR/Unix. Measure.Frames() additionally under-counted frames per measurement because its warmup probe used the same conversion. Recorded values from affected configurations are not comparable with earlier runs.
+- m_DesiredFrameCount in FramesMeasurement.cs is now clamped at k_MinIterations instead of potentially being silently wrong.
+- Measurements still open when a performance test ends (`Measure.Scope()`, `Measure.ProfilerMarkers()` and `Measure.Frames().Scope()` without a `using` block) are now all disposed. Previously, when two or more were open, every second one was skipped and its samples were silently lost. Tests that relied on this implicit disposal now report samples for sample groups that were previously empty, so their results are not comparable with earlier runs. Exceptions thrown while disposing a previously skipped measurement, such as an unsupported `SampleUnit`, now fail the test.
+- Run settings are no longer reset when entering Play mode with domain reload disabled. Previously, a measurement count override applied to the run settings was discarded on entering Play mode, so later measurements fell back to their own measurement counts. The run settings are now refreshed when a test run starts instead.
+
+### Changed
+- The minimum supported Unity version for the package has been raised to 6.0
+
 ## [3.6.0] - 2026-09-23
 
 ### Added

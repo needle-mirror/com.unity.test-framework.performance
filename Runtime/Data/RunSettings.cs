@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.Serialization;
 using Unity.PerformanceTesting.Runtime;
-using UnityEngine;
 
 namespace Unity.PerformanceTesting.Data
 {
@@ -21,15 +20,10 @@ namespace Unity.PerformanceTesting.Data
             }
         }
 
+        // Deliberately not reset on entering Play mode, unlike the other statics in this package.
+        // The settings belong to the whole test run rather than a Play mode session: TestRunBuilder.Setup() replaces
+        // the instance when a run starts, and an override applied to it must survive tests that enter Play mode.
         private static RunSettings m_Instance;
-
-#if UNITY_EDITOR
-[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStaticsOnLoad()
-        {
-            m_Instance = null;
-        }
-#endif
 
         /// <summary>
         /// Singleton instance of settings.

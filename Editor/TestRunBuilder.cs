@@ -83,6 +83,8 @@ namespace Unity.PerformanceTesting.Editor
 
             var settings = new RunSettings(Environment.GetCommandLineArgs());
             SaveToPrefs(settings, Utils.PlayerPrefKeySettingsJSON);
+            // Replace any instance left over from a previous run, which survives when domain reload is disabled.
+            RunSettings.Instance = settings;
         }
 
 #if !UNITY_2021_1_OR_NEWER
